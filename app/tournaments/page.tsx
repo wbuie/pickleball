@@ -1,0 +1,101 @@
+import Link from 'next/link';
+import { createClient } from '@/lib/supabase/server';
+import TournamentCard from '@/components/tournaments/TournamentCard';
+import type { TournamentWithCounts } from '@/lib/types/app';
+
+export default async function TournamentsPage() {
+  const supabase = await createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  let isAdmin = false;
+
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', user.id)
+      .single();
+    isAdmin = profile?.is_admin ?? false;
+  }
+
+  const { data: tournaments } = await supabase
+    .from('tournaments')
+    .select('*, registered_count:tournament_registrations(count)')
+    .order('created_at', { ascending: false });
+
+  const enriched: TournamentWithCounts[] = (tournaments || []).map(t => ({
+    ...t,
+    registered_count: (t.registered_count as unknown as { count: number }[])?.[0]?.count ?? 0,
+  }));
+
+  const open = enriched.filter(t => t.status === 'registration');
+  const active = enriched.filter(t => t.status === 'active' || t.status === 'seeding');
+  const completed = enriched.filter(t => t.status === 'completed');
+
+  return (
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Tournaments</h1>
+          <p className="text-gray-500 mt-1">Find and join a pickleball tournament near you</p>
+        </div>
+        {isAdmin && (
+          <Link
+            href="/tournaments/new"
+            className="bg-green-700 hover:bg-green-600 text-white font-medium px-5 py-2.5 rounded-xl transition-colors"
+          >
+            + New Tournament
+          </Link>
+        )}
+      </div>
+
+      {enriched.length === 0 && (
+        <div className="text-center py-20 text-gray-400">
+          <div className="text-5xl mb-3">🏓</div>
+          <p className="font-medium text-gray-600">No tournaments yet</p>
+          {isAdmin && (
+            <Link href="/tournaments/new" className="mt-3 inline-block text-green-700 font-medium hover:underline">
+              Create the first one →
+            </Link>
+          )}
+        </div>
+      )}
+
+      {open.length > 0 && (
+        <section className="mb-10">
+          <h2 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
+            <span className="w-2 h-2 bg-green-500 rounded-full inline-block" />
+            Registration Open
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {open.map(t => <TournamentCard key={t.id} tournament={t} />)}
+          </div>
+        </section>
+      )}
+
+      {active.length > 0 && (
+        <section className="mb-10">
+          <h2 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
+            <span className="w-2 h-2 bg-blue-500 rounded-full inline-block animate-pulse" />
+            In Progress
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {active.map(t => <TournamentCard key={t.id} tournament={t} />)}
+          </div>
+        </section>
+      )}
+
+      {completed.length > 0 && (
+        <section>
+          <h2 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
+            <span className="w-2 h-2 bg-gray-400 rounded-full inline-block" />
+            Completed
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {completed.map(t => <TournamentCard key={t.id} tournament={t} />)}
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}

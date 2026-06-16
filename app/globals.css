@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f0fdf4;
+  --foreground: #14532d;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Bracket connector lines */
+.bracket-line-top {
+  flex: 1;
+  border-right: 2px solid #86efac;
+  border-bottom: 2px solid #86efac;
+  border-bottom-right-radius: 4px;
+}
+
+.bracket-line-bottom {
+  flex: 1;
+  border-right: 2px solid #86efac;
+  border-top: 2px solid #86efac;
+  border-top-right-radius: 4px;
+}

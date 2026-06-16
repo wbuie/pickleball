@@ -1,0 +1,92 @@
+export type SkillLevel = 2.0 | 2.5 | 3.0 | 3.5 | 4.0 | 4.5 | 5.0;
+export type TournamentFormat = 'single_elimination' | 'double_elimination';
+export type TournamentStatus = 'registration' | 'seeding' | 'active' | 'completed';
+export type MatchStatus = 'pending' | 'bye' | 'in_progress' | 'completed';
+export type BracketType = 'winners' | 'losers' | 'grand_finals';
+
+export interface Profile {
+  id: string;
+  display_name: string;
+  skill_level: number | null;
+  is_admin: boolean;
+  created_at: string;
+}
+
+export interface Tournament {
+  id: string;
+  name: string;
+  description: string | null;
+  format: TournamentFormat;
+  status: TournamentStatus;
+  max_players: number;
+  start_date: string | null;
+  location: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TournamentRegistration {
+  id: string;
+  tournament_id: string;
+  player_id: string;
+  seed: number | null;
+  registered_at: string;
+  profiles?: Profile;
+}
+
+export interface Match {
+  id: string;
+  tournament_id: string;
+  bracket_type: BracketType;
+  round: number;
+  position: number;
+  player1_id: string | null;
+  player2_id: string | null;
+  player1_score: number | null;
+  player2_score: number | null;
+  winner_id: string | null;
+  loser_id: string | null;
+  status: MatchStatus;
+  winner_next_match_id: string | null;
+  loser_next_match_id: string | null;
+  winner_next_slot: 1 | 2 | null;
+  loser_next_slot: 1 | 2 | null;
+  created_at: string;
+  player1?: Profile;
+  player2?: Profile;
+  winner?: Profile;
+}
+
+export interface TournamentWithCounts extends Tournament {
+  registered_count: number;
+  creator?: Profile;
+}
+
+export interface BracketGrid {
+  winners: Record<number, Match[]>;
+  losers: Record<number, Match[]>;
+  grandFinals: Match[];
+}
+
+export const SKILL_LEVELS: { value: string; label: string }[] = [
+  { value: '2.0', label: '2.0 - Beginner' },
+  { value: '2.5', label: '2.5 - Beginner+' },
+  { value: '3.0', label: '3.0 - Intermediate' },
+  { value: '3.5', label: '3.5 - Intermediate+' },
+  { value: '4.0', label: '4.0 - Advanced' },
+  { value: '4.5', label: '4.5 - Advanced+' },
+  { value: '5.0', label: '5.0 - Pro' },
+];
+
+export const STATUS_LABELS: Record<TournamentStatus, string> = {
+  registration: 'Registration Open',
+  seeding: 'Seeding',
+  active: 'In Progress',
+  completed: 'Completed',
+};
+
+export const FORMAT_LABELS: Record<TournamentFormat, string> = {
+  single_elimination: 'Single Elimination',
+  double_elimination: 'Double Elimination',
+};
