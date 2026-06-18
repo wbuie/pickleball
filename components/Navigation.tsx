@@ -33,7 +33,7 @@ export default function Navigation({ user }: NavigationProps) {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 font-bold text-xl tracking-tight">
-            <span className="text-accent-400 text-2xl">🥒</span>
+            <span className="text-accent-400 text-2xl">🏓</span>
             <span>CFC Pickleball League</span>
           </Link>
 

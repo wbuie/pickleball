@@ -36,7 +36,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <Navigation user={profile} />
         <main className="flex-1">{children}</main>
         <footer className="bg-brand-900 text-brand-300 text-center text-xs py-4 mt-auto">
-          <p>CFC Pickleball League · Christ Fellowship Church, Birmingham 🥒</p>
+          <p>CFC Pickleball League · Christ Fellowship Church, Birmingham 🏓</p>
         </footer>
       </body>
     </html>

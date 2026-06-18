@@ -1,4 +1,4 @@
-# CFC Pickleball League 🥒
+# CFC Pickleball League 🏓
 
 A pickleball tournament hosting web app for **Christ Fellowship Church, Birmingham**. Built with Next.js, Supabase, and Tailwind CSS.
 

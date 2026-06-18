@@ -25,7 +25,7 @@ export default async function HomePage() {
       {/* Hero */}
       <div className="bg-gradient-to-br from-brand-800 to-brand-900 text-white">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-20 text-center">
-          <div className="text-6xl mb-4">🥒</div>
+          <div className="text-6xl mb-4">🏓</div>
           <p className="text-accent-400 font-semibold tracking-wide uppercase text-sm mb-2">
             Christ Fellowship Church · Birmingham
           </p>
