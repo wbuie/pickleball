@@ -24,11 +24,13 @@ A pickleball tournament hosting web app for **Christ Fellowship Church, Birmingh
 
 ## Theming / Brand Colors
 
-All brand colors live in **one place**: the `@theme` block at the top of `app/globals.css`.
-Edit the `--color-brand-*` scale (primary) and `--color-accent-*` scale (secondary) to
-match Christ Fellowship's exact branding — every page, button, and bracket references
-these tokens, so you don't need to touch any component. The defaults are a church navy +
-gold; drop in the church's official hex values to match the website exactly.
+All brand colors and fonts live in **one place**: the `@theme` block at the top of
+`app/globals.css`. The palette is pulled straight from Christ Fellowship Church's site
+(cfcbirmingham.org): primary **teal `#459db9`** (`--color-brand-*`) with a **bright cyan
+`#92eaf6`** accent (`--color-accent-*`), on a charcoal `#252E32` foreground. Headings use
+**DM Serif Text** (the church's display face) and body copy uses **Mulish** (a clean
+geometric stand-in for the site's "Soleil"). Every page, button, and bracket references
+these tokens, so re-skinning the whole app means editing only this one file.
 
 ## Setup
 
