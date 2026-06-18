@@ -54,7 +54,7 @@ export default function RegisterForm() {
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <span className="text-5xl">🥒</span>
+          <span className="text-5xl">🏓</span>
           <p className="text-accent-600 font-semibold tracking-wide uppercase text-xs mt-2">
             Christ Fellowship Church
           </p>
