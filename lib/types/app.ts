@@ -79,6 +79,45 @@ export const SKILL_LEVELS: { value: string; label: string }[] = [
   { value: '5.0', label: '5.0 - Pro' },
 ];
 
+// Plain-language self-assessment for players who don't know their DUPR rating.
+// Each option maps to an approximate DUPR value used for seeding.
+export const SKILL_DESCRIPTIONS: {
+  value: string;
+  title: string;
+  description: string;
+}[] = [
+  {
+    value: '2.0',
+    title: 'Brand new',
+    description: "I've barely played — still learning how the game works.",
+  },
+  {
+    value: '2.5',
+    title: 'Beginner',
+    description: 'I know the basic rules and can keep a short rally going.',
+  },
+  {
+    value: '3.0',
+    title: 'Recreational',
+    description: 'I play casually for fun and can sustain a rally.',
+  },
+  {
+    value: '3.5',
+    title: 'Intermediate',
+    description: 'Consistent serves and returns, and I understand basic strategy.',
+  },
+  {
+    value: '4.0',
+    title: 'Advanced',
+    description: 'I play competitively with strong shots, placement, and positioning.',
+  },
+  {
+    value: '4.5',
+    title: 'Highly competitive',
+    description: 'Tournament-level player with a complete, refined game.',
+  },
+];
+
 export const STATUS_LABELS: Record<TournamentStatus, string> = {
   registration: 'Registration Open',
   seeding: 'Seeding',

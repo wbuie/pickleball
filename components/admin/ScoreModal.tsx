@@ -55,9 +55,9 @@ export default function ScoreModal({ match, onClose, onSuccess }: ScoreModalProp
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
-        <div className="bg-green-800 text-white px-6 py-4 rounded-t-2xl">
+        <div className="bg-brand-800 text-white px-6 py-4 rounded-t-2xl">
           <h2 className="font-bold text-lg">Enter Score</h2>
-          <p className="text-green-200 text-sm mt-0.5">
+          <p className="text-brand-200 text-sm mt-0.5">
             {match.bracket_type === 'winners' && `WB Round ${match.round}`}
             {match.bracket_type === 'losers' && `LB Round ${match.round}`}
             {match.bracket_type === 'grand_finals' && match.round === 1 && 'Grand Final'}
@@ -78,7 +78,7 @@ export default function ScoreModal({ match, onClose, onSuccess }: ScoreModalProp
               value={p1Score}
               onChange={e => setP1Score(e.target.value)}
               placeholder="Score"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-center text-xl font-bold focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-center text-xl font-bold focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
               required
             />
           </div>
@@ -101,7 +101,7 @@ export default function ScoreModal({ match, onClose, onSuccess }: ScoreModalProp
               value={p2Score}
               onChange={e => setP2Score(e.target.value)}
               placeholder="Score"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-center text-xl font-bold focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-center text-xl font-bold focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
               required
             />
           </div>
@@ -121,7 +121,7 @@ export default function ScoreModal({ match, onClose, onSuccess }: ScoreModalProp
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2 bg-green-700 text-white rounded-lg font-medium hover:bg-green-600 disabled:opacity-50 transition-colors"
+              className="flex-1 px-4 py-2 bg-brand-700 text-white rounded-lg font-medium hover:bg-brand-600 disabled:opacity-50 transition-colors"
             >
               {loading ? 'Saving…' : 'Save Score'}
             </button>

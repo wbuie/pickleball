@@ -114,7 +114,7 @@ export default function AdminPage() {
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <Link href={`/tournaments/${id}`} className="text-green-600 text-sm hover:underline mb-1 block">
+          <Link href={`/tournaments/${id}`} className="text-brand-600 text-sm hover:underline mb-1 block">
             ← Back to tournament
           </Link>
           <h1 className="text-2xl font-bold text-gray-900">Admin Panel</h1>
@@ -130,11 +130,11 @@ export default function AdminPage() {
         <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 mb-4 text-sm">{error}</div>
       )}
       {success && (
-        <div className="bg-green-50 border border-green-200 text-green-700 rounded-xl px-4 py-3 mb-4 text-sm">{success}</div>
+        <div className="bg-brand-50 border border-brand-200 text-brand-700 rounded-xl px-4 py-3 mb-4 text-sm">{success}</div>
       )}
 
       {/* Player Seeding */}
-      <div className="bg-white rounded-2xl shadow-sm border border-green-100 p-6 mb-6">
+      <div className="bg-white rounded-2xl shadow-sm border border-brand-100 p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-gray-900">
             Players ({registrations.length})
@@ -142,7 +142,7 @@ export default function AdminPage() {
           {!isBracketGenerated && (
             <button
               onClick={handleAutoSeed}
-              className="text-sm text-green-700 border border-green-300 px-3 py-1.5 rounded-lg hover:bg-green-50 transition-colors"
+              className="text-sm text-brand-700 border border-brand-300 px-3 py-1.5 rounded-lg hover:bg-brand-50 transition-colors"
             >
               Auto-seed by skill
             </button>
@@ -172,7 +172,7 @@ export default function AdminPage() {
                           ...prev,
                           [reg.player_id]: parseInt(e.target.value) || 0,
                         }))}
-                        className="w-14 border border-gray-200 rounded-lg px-2 py-1 text-sm text-center focus:outline-none focus:ring-2 focus:ring-green-500"
+                        className="w-14 border border-gray-200 rounded-lg px-2 py-1 text-sm text-center focus:outline-none focus:ring-2 focus:ring-brand-500"
                       />
                     ) : (
                       <span className="w-14 text-center text-gray-400 text-sm inline-block">
@@ -191,14 +191,14 @@ export default function AdminPage() {
           <div className="mt-4 pt-4 border-t border-gray-100 flex gap-3">
             <button
               onClick={handleSaveSeeds}
-              className="flex-1 bg-white border border-green-300 text-green-700 text-sm font-medium py-2 rounded-lg hover:bg-green-50 transition-colors"
+              className="flex-1 bg-white border border-brand-300 text-brand-700 text-sm font-medium py-2 rounded-lg hover:bg-brand-50 transition-colors"
             >
               Save Seeds
             </button>
             <button
               onClick={handleGenerateBracket}
               disabled={generating || registrations.length < 2}
-              className="flex-1 bg-green-700 hover:bg-green-600 text-white text-sm font-bold py-2 rounded-lg disabled:opacity-50 transition-colors"
+              className="flex-1 bg-brand-700 hover:bg-brand-600 text-white text-sm font-bold py-2 rounded-lg disabled:opacity-50 transition-colors"
             >
               {generating ? 'Generating…' : '🏆 Generate Bracket'}
             </button>
@@ -209,7 +209,7 @@ export default function AdminPage() {
           <div className="mt-4 pt-4 border-t border-gray-100">
             <p className="text-sm text-gray-500 text-center">
               Bracket is live.{' '}
-              <Link href={`/tournaments/${id}`} className="text-green-700 hover:underline font-medium">
+              <Link href={`/tournaments/${id}`} className="text-brand-700 hover:underline font-medium">
                 View and score matches →
               </Link>
             </p>
@@ -218,7 +218,7 @@ export default function AdminPage() {
       </div>
 
       {/* Tournament Info */}
-      <div className="bg-white rounded-2xl shadow-sm border border-green-100 p-6">
+      <div className="bg-white rounded-2xl shadow-sm border border-brand-100 p-6">
         <h2 className="text-lg font-bold text-gray-900 mb-4">Tournament Info</h2>
         <dl className="space-y-2 text-sm">
           <div className="flex gap-2">

@@ -50,7 +50,7 @@ export default function NewTournamentPage() {
         <p className="text-gray-500 mt-1">Set up a new pickleball tournament</p>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-green-100 p-6">
+      <div className="bg-white rounded-2xl shadow-sm border border-brand-100 p-6">
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -61,7 +61,7 @@ export default function NewTournamentPage() {
               type="text"
               placeholder="Spring Open 2025"
               required
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
             />
           </div>
 
@@ -71,7 +71,7 @@ export default function NewTournamentPage() {
               name="description"
               placeholder="Details about the tournament, rules, prizes, etc."
               rows={3}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent resize-none"
             />
           </div>
 
@@ -84,7 +84,7 @@ export default function NewTournamentPage() {
                 name="format"
                 required
                 defaultValue="single_elimination"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-white"
               >
                 <option value="single_elimination">Single Elimination</option>
                 <option value="double_elimination">Double Elimination</option>
@@ -99,7 +99,7 @@ export default function NewTournamentPage() {
                 name="max_players"
                 required
                 defaultValue="16"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-white"
               >
                 {[4, 8, 16, 32, 64].map(n => (
                   <option key={n} value={n}>{n} players</option>
@@ -114,7 +114,7 @@ export default function NewTournamentPage() {
               <input
                 name="start_date"
                 type="date"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
               />
             </div>
 
@@ -124,7 +124,7 @@ export default function NewTournamentPage() {
                 name="location"
                 type="text"
                 placeholder="City Park Courts"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
               />
             </div>
           </div>
@@ -144,7 +144,7 @@ export default function NewTournamentPage() {
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2.5 bg-green-700 hover:bg-green-600 text-white rounded-lg font-medium disabled:opacity-50 transition-colors"
+              className="flex-1 px-4 py-2.5 bg-brand-700 hover:bg-brand-600 text-white rounded-lg font-medium disabled:opacity-50 transition-colors"
             >
               {loading ? 'Creating…' : 'Create Tournament'}
             </button>

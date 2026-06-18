@@ -23,20 +23,23 @@ export default async function HomePage() {
   return (
     <div>
       {/* Hero */}
-      <div className="bg-gradient-to-br from-green-800 to-green-900 text-white">
+      <div className="bg-gradient-to-br from-brand-800 to-brand-900 text-white">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-20 text-center">
           <div className="text-6xl mb-4">🥒</div>
+          <p className="text-accent-400 font-semibold tracking-wide uppercase text-sm mb-2">
+            Christ Fellowship Church · Birmingham
+          </p>
           <h1 className="text-4xl sm:text-5xl font-extrabold mb-4 tracking-tight">
-            PickleBracket
+            CFC Pickleball League
           </h1>
-          <p className="text-green-200 text-xl mb-8 max-w-xl mx-auto">
-            The easiest way to host and manage pickleball tournaments.
-            Build brackets, track scores, crown champions.
+          <p className="text-brand-200 text-xl mb-8 max-w-xl mx-auto">
+            Come play, compete, and connect. Tournaments for every skill level —
+            whether you&apos;re brand new or a seasoned competitor, there&apos;s a spot for you.
           </p>
           <div className="flex gap-4 justify-center flex-wrap">
             <Link
               href="/tournaments"
-              className="bg-yellow-500 hover:bg-yellow-400 text-yellow-900 font-bold px-7 py-3 rounded-xl text-lg transition-colors shadow-lg"
+              className="bg-accent-500 hover:bg-accent-400 text-accent-900 font-bold px-7 py-3 rounded-xl text-lg transition-colors shadow-lg"
             >
               Browse Tournaments
             </Link>
@@ -58,11 +61,11 @@ export default async function HomePage() {
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             {[
-              { icon: '🏆', title: 'Smart Brackets', desc: 'Single & double elimination with automatic seeding by DUPR rating' },
+              { icon: '🏆', title: 'Smart Brackets', desc: 'Single & double elimination with automatic seeding by skill level' },
               { icon: '📊', title: 'Live Scoring', desc: 'Admins enter scores in real time and winners advance automatically' },
-              { icon: '🎾', title: 'Skill Matching', desc: 'Players register with their skill level for fair competitive brackets' },
+              { icon: '🤝', title: 'All Skill Levels', desc: 'Not sure of your rating? Just pick the description that fits — everyone is welcome' },
             ].map(f => (
-              <div key={f.title} className="text-center p-6 rounded-2xl bg-green-50 border border-green-100">
+              <div key={f.title} className="text-center p-6 rounded-2xl bg-brand-50 border border-brand-100">
                 <div className="text-4xl mb-3">{f.icon}</div>
                 <h3 className="font-bold text-gray-900 mb-1">{f.title}</h3>
                 <p className="text-gray-500 text-sm">{f.desc}</p>
@@ -77,7 +80,7 @@ export default async function HomePage() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-12">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-gray-900">Recent Tournaments</h2>
-            <Link href="/tournaments" className="text-green-700 text-sm font-medium hover:underline">
+            <Link href="/tournaments" className="text-brand-700 text-sm font-medium hover:underline">
               View all →
             </Link>
           </div>

@@ -42,7 +42,7 @@ export default async function TournamentsPage() {
         {isAdmin && (
           <Link
             href="/tournaments/new"
-            className="bg-green-700 hover:bg-green-600 text-white font-medium px-5 py-2.5 rounded-xl transition-colors"
+            className="bg-brand-700 hover:bg-brand-600 text-white font-medium px-5 py-2.5 rounded-xl transition-colors"
           >
             + New Tournament
           </Link>
@@ -54,7 +54,7 @@ export default async function TournamentsPage() {
           <div className="text-5xl mb-3">🏓</div>
           <p className="font-medium text-gray-600">No tournaments yet</p>
           {isAdmin && (
-            <Link href="/tournaments/new" className="mt-3 inline-block text-green-700 font-medium hover:underline">
+            <Link href="/tournaments/new" className="mt-3 inline-block text-brand-700 font-medium hover:underline">
               Create the first one →
             </Link>
           )}
@@ -64,7 +64,7 @@ export default async function TournamentsPage() {
       {open.length > 0 && (
         <section className="mb-10">
           <h2 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
-            <span className="w-2 h-2 bg-green-500 rounded-full inline-block" />
+            <span className="w-2 h-2 bg-brand-500 rounded-full inline-block" />
             Registration Open
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

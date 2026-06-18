@@ -1,10 +1,10 @@
-# PickleBracket 🥒
+# CFC Pickleball League 🥒
 
-A full-featured pickleball tournament hosting web app. Built with Next.js, Supabase, and Tailwind CSS.
+A pickleball tournament hosting web app for **Christ Fellowship Church, Birmingham**. Built with Next.js, Supabase, and Tailwind CSS.
 
 ## Features
 
-- **Player Registration** — Players create accounts with DUPR skill level (2.0–5.0)
+- **Player Registration** — Players create accounts and set their skill level by either picking a plain-language description ("Brand new", "Recreational", "Advanced", …) or entering a DUPR rating (2.0–5.0) if they know it
 - **Tournament Management** — Admins create tournaments with format, date, location, and capacity
 - **Single Elimination** — Standard knockout bracket with proper seeding and byes
 - **Double Elimination** — Full WB/LB/Grand Finals structure with reset match support
@@ -21,6 +21,14 @@ A full-featured pickleball tournament hosting web app. Built with Next.js, Supab
 - **Deployment:** Vercel + Supabase
 
 ---
+
+## Theming / Brand Colors
+
+All brand colors live in **one place**: the `@theme` block at the top of `app/globals.css`.
+Edit the `--color-brand-*` scale (primary) and `--color-accent-*` scale (secondary) to
+match Christ Fellowship's exact branding — every page, button, and bracket references
+these tokens, so you don't need to touch any component. The defaults are a church navy +
+gold; drop in the church's official hex values to match the website exactly.
 
 ## Setup
 

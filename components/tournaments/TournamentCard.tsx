@@ -12,7 +12,7 @@ export default function TournamentCard({ tournament }: TournamentCardProps) {
 
   return (
     <Link href={`/tournaments/${tournament.id}`}>
-      <div className="bg-white rounded-2xl shadow-sm border border-green-100 hover:shadow-md hover:border-green-300 transition-all p-5 h-full">
+      <div className="bg-white rounded-2xl shadow-sm border border-brand-100 hover:shadow-md hover:border-brand-300 transition-all p-5 h-full">
         <div className="flex items-start justify-between gap-2 mb-3">
           <h3 className="font-bold text-gray-900 text-lg leading-tight line-clamp-2">
             {tournament.name}
@@ -56,8 +56,8 @@ export default function TournamentCard({ tournament }: TournamentCardProps) {
                 fillPercent >= 100
                   ? 'bg-red-400'
                   : fillPercent >= 75
-                  ? 'bg-yellow-400'
-                  : 'bg-green-400'
+                  ? 'bg-accent-400'
+                  : 'bg-brand-400'
               }`}
               style={{ width: `${Math.min(fillPercent, 100)}%` }}
             />

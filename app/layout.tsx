@@ -8,8 +8,8 @@ const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] });
 const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'PickleBracket – Pickleball Tournament Management',
-  description: 'Host and manage pickleball tournaments with beautiful brackets',
+  title: 'CFC Pickleball League – Christ Fellowship Church',
+  description: 'Pickleball tournaments hosted by Christ Fellowship Church, Birmingham. Register, build brackets, and play.',
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -31,8 +31,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className="min-h-full flex flex-col antialiased">
         <Navigation user={profile} />
         <main className="flex-1">{children}</main>
-        <footer className="bg-green-900 text-green-300 text-center text-xs py-4 mt-auto">
-          <p>PickleBracket — Built for the love of the game 🥒</p>
+        <footer className="bg-brand-900 text-brand-300 text-center text-xs py-4 mt-auto">
+          <p>CFC Pickleball League · Christ Fellowship Church, Birmingham 🥒</p>
         </footer>
       </body>
     </html>

@@ -61,7 +61,7 @@ export default function SingleEliminationBracket({
               <div className="flex flex-col" style={{ width: 200 }}>
                 {/* Round label */}
                 <div className="h-8 flex items-center justify-center mb-2">
-                  <span className="text-xs font-semibold text-green-700 uppercase tracking-wider">
+                  <span className="text-xs font-semibold text-brand-700 uppercase tracking-wider">
                     {getRoundLabel(round)}
                   </span>
                 </div>

@@ -30,7 +30,7 @@ export default function MatchCard({ match, isAdmin, onScoreClick, compact = fals
     <div
       className={`flex items-center justify-between px-2.5 py-1.5 min-w-0 ${
         isWinner
-          ? 'bg-green-50 border-l-4 border-l-green-500'
+          ? 'bg-brand-50 border-l-4 border-l-brand-500'
           : isLoser
           ? 'opacity-50'
           : ''
@@ -38,7 +38,7 @@ export default function MatchCard({ match, isAdmin, onScoreClick, compact = fals
     >
       <span
         className={`text-xs font-medium truncate flex-1 min-w-0 ${
-          isWinner ? 'text-green-800 font-bold' : 'text-gray-700'
+          isWinner ? 'text-brand-800 font-bold' : 'text-gray-700'
         }`}
       >
         {player ? player.display_name : (
@@ -48,7 +48,7 @@ export default function MatchCard({ match, isAdmin, onScoreClick, compact = fals
       {isCompleted && (
         <span
           className={`ml-2 text-xs font-bold tabular-nums flex-shrink-0 ${
-            isWinner ? 'text-green-700' : 'text-gray-400'
+            isWinner ? 'text-brand-700' : 'text-gray-400'
           }`}
         >
           {score ?? '–'}
@@ -82,9 +82,9 @@ export default function MatchCard({ match, isAdmin, onScoreClick, compact = fals
         compact ? 'w-40' : 'w-48'
       } ${
         isCompleted
-          ? 'border-green-200'
+          ? 'border-brand-200'
           : isClickable
-          ? 'border-yellow-400 cursor-pointer hover:shadow-md hover:border-yellow-500'
+          ? 'border-accent-400 cursor-pointer hover:shadow-md hover:border-accent-500'
           : 'border-gray-200'
       }`}
       onClick={() => isClickable && onScoreClick?.(match.id)}
@@ -105,8 +105,8 @@ export default function MatchCard({ match, isAdmin, onScoreClick, compact = fals
         label="TBD"
       />
       {isClickable && (
-        <div className="bg-yellow-50 border-t border-yellow-200 px-2.5 py-1 text-center">
-          <span className="text-yellow-700 text-xs font-medium">Enter Score</span>
+        <div className="bg-accent-50 border-t border-accent-200 px-2.5 py-1 text-center">
+          <span className="text-accent-700 text-xs font-medium">Enter Score</span>
         </div>
       )}
     </div>

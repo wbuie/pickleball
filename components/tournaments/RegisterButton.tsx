@@ -52,14 +52,14 @@ export default function RegisterButton({ tournamentId, isRegistered, isFull }: R
         className={`text-sm font-medium px-5 py-2.5 rounded-xl transition-colors disabled:opacity-50 ${
           isRegistered
             ? 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200'
-            : 'bg-green-700 hover:bg-green-600 text-white shadow-sm'
+            : 'bg-brand-700 hover:bg-brand-600 text-white shadow-sm'
         }`}
       >
         {loading ? '…' : isRegistered ? 'Withdraw' : 'Register Now'}
       </button>
       {error && <p className="text-red-600 text-xs mt-1">{error}</p>}
       {isRegistered && (
-        <p className="text-green-600 text-xs mt-1 text-center">✓ You&apos;re registered!</p>
+        <p className="text-brand-600 text-xs mt-1 text-center">✓ You&apos;re registered!</p>
       )}
     </div>
   );

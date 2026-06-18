@@ -30,7 +30,7 @@ function BracketSection({
   isAdmin,
   onScoreClick,
   getRoundLabel,
-  bgColor = 'bg-green-50',
+  bgColor = 'bg-brand-50',
 }: {
   title: string;
   rounds: number;
@@ -49,7 +49,7 @@ function BracketSection({
 
   return (
     <div className={`rounded-xl p-4 ${bgColor}`}>
-      <h3 className="text-sm font-bold text-green-800 uppercase tracking-wider mb-3">{title}</h3>
+      <h3 className="text-sm font-bold text-brand-800 uppercase tracking-wider mb-3">{title}</h3>
       <div className="overflow-x-auto">
         <div className="flex gap-0 min-w-max" style={{ height: totalHeight }}>
           {Array.from({ length: rounds }, (_, i) => i + 1).map(round => {
@@ -59,7 +59,7 @@ function BracketSection({
             return (
               <div key={round} className="flex flex-col" style={{ width: 200 }}>
                 <div className="h-8 flex items-center justify-center mb-2">
-                  <span className="text-xs font-semibold text-green-700 uppercase tracking-wider">
+                  <span className="text-xs font-semibold text-brand-700 uppercase tracking-wider">
                     {getRoundLabel(round)}
                   </span>
                 </div>
@@ -126,7 +126,7 @@ export default function DoubleEliminationBracket({
         isAdmin={isAdmin}
         onScoreClick={onScoreClick}
         getRoundLabel={getWBLabel}
-        bgColor="bg-green-50"
+        bgColor="bg-brand-50"
       />
 
       {/* Losers Bracket */}
@@ -145,14 +145,14 @@ export default function DoubleEliminationBracket({
 
       {/* Grand Finals */}
       {gfMatches.length > 0 && (
-        <div className="bg-yellow-50 rounded-xl p-4 border-2 border-yellow-300">
-          <h3 className="text-sm font-bold text-yellow-800 uppercase tracking-wider mb-3">
+        <div className="bg-accent-50 rounded-xl p-4 border-2 border-accent-300">
+          <h3 className="text-sm font-bold text-accent-800 uppercase tracking-wider mb-3">
             Grand Finals
           </h3>
           <div className="flex gap-6 flex-wrap">
             {gfMatches.map((match, idx) => (
               <div key={match.id}>
-                <p className="text-xs text-yellow-700 font-medium mb-1.5 text-center">
+                <p className="text-xs text-accent-700 font-medium mb-1.5 text-center">
                   {idx === 0 ? 'Grand Final' : 'Reset Match'}
                 </p>
                 <MatchCard
@@ -161,7 +161,7 @@ export default function DoubleEliminationBracket({
                   onScoreClick={onScoreClick}
                 />
                 {idx === 1 && match.status === 'pending' && !match.player1_id && (
-                  <p className="text-xs text-yellow-600 mt-1 text-center italic">
+                  <p className="text-xs text-accent-600 mt-1 text-center italic">
                     Only if needed
                   </p>
                 )}

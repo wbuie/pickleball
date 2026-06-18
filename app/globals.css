@@ -1,15 +1,50 @@
 @import "tailwindcss";
 
-:root {
-  --background: #f0fdf4;
-  --foreground: #14532d;
-}
+/* ============================================================
+   BRAND THEME — Christ Fellowship Church (CFC Pickleball League)
+   ------------------------------------------------------------
+   To match the church's exact branding, replace the hex values
+   in the `brand` (primary) and `accent` (secondary) scales below.
+   Everything in the app references these tokens, so this is the
+   only place you need to edit to re-skin the whole app.
+
+   Defaults: warm church navy (brand) + gold (accent).
+   ============================================================ */
 
 @theme inline {
+  /* Primary brand color (navy blue) */
+  --color-brand-50: #eff6ff;
+  --color-brand-100: #dbeafe;
+  --color-brand-200: #bfdbfe;
+  --color-brand-300: #93c5fd;
+  --color-brand-400: #60a5fa;
+  --color-brand-500: #3b82f6;
+  --color-brand-600: #2563eb;
+  --color-brand-700: #1d4ed8;
+  --color-brand-800: #1e3a8a;
+  --color-brand-900: #172554;
+
+  /* Accent color (gold) */
+  --color-accent-50: #fffbeb;
+  --color-accent-100: #fef3c7;
+  --color-accent-200: #fde68a;
+  --color-accent-300: #fcd34d;
+  --color-accent-400: #fbbf24;
+  --color-accent-500: #f59e0b;
+  --color-accent-600: #d97706;
+  --color-accent-700: #b45309;
+  --color-accent-800: #92400e;
+  --color-accent-900: #78350f;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+}
+
+:root {
+  --background: #f8fafc;
+  --foreground: #172554;
 }
 
 body {
@@ -22,14 +57,14 @@ body {
 /* Bracket connector lines */
 .bracket-line-top {
   flex: 1;
-  border-right: 2px solid #86efac;
-  border-bottom: 2px solid #86efac;
+  border-right: 2px solid #bfdbfe;
+  border-bottom: 2px solid #bfdbfe;
   border-bottom-right-radius: 4px;
 }
 
 .bracket-line-bottom {
   flex: 1;
-  border-right: 2px solid #86efac;
-  border-top: 2px solid #86efac;
+  border-right: 2px solid #bfdbfe;
+  border-top: 2px solid #bfdbfe;
   border-top-right-radius: 4px;
 }

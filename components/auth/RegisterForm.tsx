@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { SKILL_LEVELS } from '@/lib/types/app';
+import { SKILL_LEVELS, SKILL_DESCRIPTIONS } from '@/lib/types/app';
 
 export default function RegisterForm() {
   const router = useRouter();
@@ -12,6 +12,7 @@ export default function RegisterForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [skillLevel, setSkillLevel] = useState('3.0');
+  const [knowsDupr, setKnowsDupr] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -38,7 +39,6 @@ export default function RegisterForm() {
       return;
     }
 
-    // Update skill level in profile
     if (data.user) {
       await supabase
         .from('profiles')
@@ -55,11 +55,14 @@ export default function RegisterForm() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <span className="text-5xl">🥒</span>
-          <h1 className="text-2xl font-bold text-green-900 mt-3">Join PickleBracket</h1>
+          <p className="text-accent-600 font-semibold tracking-wide uppercase text-xs mt-2">
+            Christ Fellowship Church
+          </p>
+          <h1 className="text-2xl font-bold text-brand-900 mt-1">Join the CFC Pickleball League</h1>
           <p className="text-gray-500 mt-1">Create your account to enter tournaments</p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-green-100 p-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-brand-100 p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Your Name</label>
@@ -69,7 +72,7 @@ export default function RegisterForm() {
                 onChange={e => setDisplayName(e.target.value)}
                 placeholder="Jane Smith"
                 required
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
               />
             </div>
 
@@ -81,7 +84,7 @@ export default function RegisterForm() {
                 onChange={e => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 required
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
               />
             </div>
 
@@ -94,28 +97,79 @@ export default function RegisterForm() {
                 placeholder="Min. 6 characters"
                 required
                 minLength={6}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
               />
             </div>
 
+            {/* Skill level */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Skill Level (DUPR Rating)
-              </label>
-              <select
-                value={skillLevel}
-                onChange={e => setSkillLevel(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
-              >
-                {SKILL_LEVELS.map(level => (
-                  <option key={level.value} value={level.value}>
-                    {level.label}
-                  </option>
-                ))}
-              </select>
-              <p className="text-xs text-gray-400 mt-1">
-                DUPR ratings range from 2.0 (beginner) to 5.0 (pro)
-              </p>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  How would you describe your game?
+                </label>
+              </div>
+
+              {!knowsDupr ? (
+                <>
+                  <div className="space-y-2">
+                    {SKILL_DESCRIPTIONS.map(level => {
+                      const selected = skillLevel === level.value;
+                      return (
+                        <button
+                          key={level.value}
+                          type="button"
+                          onClick={() => setSkillLevel(level.value)}
+                          className={`w-full text-left rounded-xl border px-3.5 py-2.5 transition-colors ${
+                            selected
+                              ? 'border-brand-500 bg-brand-50 ring-1 ring-brand-500'
+                              : 'border-gray-200 hover:border-brand-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`flex-shrink-0 w-4 h-4 rounded-full border-2 ${
+                                selected ? 'border-brand-600 bg-brand-600' : 'border-gray-300'
+                              }`}
+                            />
+                            <span className={`text-sm font-semibold ${selected ? 'text-brand-800' : 'text-gray-800'}`}>
+                              {level.title}
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-0.5 ml-6">{level.description}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setKnowsDupr(true)}
+                    className="text-brand-700 text-xs font-medium hover:underline mt-2.5"
+                  >
+                    I know my DUPR rating — let me enter it instead
+                  </button>
+                </>
+              ) : (
+                <>
+                  <select
+                    value={skillLevel}
+                    onChange={e => setSkillLevel(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-white"
+                  >
+                    {SKILL_LEVELS.map(level => (
+                      <option key={level.value} value={level.value}>
+                        {level.label}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => setKnowsDupr(false)}
+                    className="text-brand-700 text-xs font-medium hover:underline mt-2.5"
+                  >
+                    Not sure of your rating? Describe your game instead
+                  </button>
+                </>
+              )}
             </div>
 
             {error && (
@@ -125,7 +179,7 @@ export default function RegisterForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-green-700 hover:bg-green-600 text-white font-medium py-2.5 rounded-lg transition-colors disabled:opacity-50"
+              className="w-full bg-brand-700 hover:bg-brand-600 text-white font-medium py-2.5 rounded-lg transition-colors disabled:opacity-50"
             >
               {loading ? 'Creating account…' : 'Create Account'}
             </button>
@@ -133,7 +187,7 @@ export default function RegisterForm() {
 
           <p className="text-center text-sm text-gray-500 mt-4">
             Already have an account?{' '}
-            <Link href="/auth/login" className="text-green-700 font-medium hover:underline">
+            <Link href="/auth/login" className="text-brand-700 font-medium hover:underline">
               Sign in
             </Link>
           </p>
