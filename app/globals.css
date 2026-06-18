@@ -3,48 +3,51 @@
 /* ============================================================
    BRAND THEME — Christ Fellowship Church (CFC Pickleball League)
    ------------------------------------------------------------
-   To match the church's exact branding, replace the hex values
-   in the `brand` (primary) and `accent` (secondary) scales below.
-   Everything in the app references these tokens, so this is the
-   only place you need to edit to re-skin the whole app.
+   Colors pulled from the church's live site (cfcbirmingham.org):
+   primary teal #459db9, lighter teals (#77cad5 / #90bdc4), bright
+   cyan #92eaf6, and charcoal #252E32. Fonts match the site too:
+   DM Serif Text for display headings (their banner/title face) and
+   a clean geometric sans for body (the site uses "Soleil").
 
-   Defaults: warm church navy (brand) + gold (accent).
+   Everything in the app references the `brand`/`accent` tokens
+   below, so this file is the only place to edit to re-skin.
    ============================================================ */
 
 @theme inline {
-  /* Primary brand color (navy blue) */
-  --color-brand-50: #eff6ff;
-  --color-brand-100: #dbeafe;
-  --color-brand-200: #bfdbfe;
-  --color-brand-300: #93c5fd;
-  --color-brand-400: #60a5fa;
-  --color-brand-500: #3b82f6;
-  --color-brand-600: #2563eb;
-  --color-brand-700: #1d4ed8;
-  --color-brand-800: #1e3a8a;
-  --color-brand-900: #172554;
+  /* Primary brand color — CFC teal (anchored on #459db9) */
+  --color-brand-50: #eef7f9;
+  --color-brand-100: #d4ebf0;
+  --color-brand-200: #aedde6;
+  --color-brand-300: #7cc7d4;
+  --color-brand-400: #4faec5;
+  --color-brand-500: #459db9;
+  --color-brand-600: #3a849c;
+  --color-brand-700: #336a7d;
+  --color-brand-800: #2f5462;
+  --color-brand-900: #252e32;
 
-  /* Accent color (gold) */
-  --color-accent-50: #fffbeb;
-  --color-accent-100: #fef3c7;
-  --color-accent-200: #fde68a;
-  --color-accent-300: #fcd34d;
-  --color-accent-400: #fbbf24;
-  --color-accent-500: #f59e0b;
-  --color-accent-600: #d97706;
-  --color-accent-700: #b45309;
-  --color-accent-800: #92400e;
-  --color-accent-900: #78350f;
+  /* Accent color — CFC bright cyan (anchored on #92eaf6) */
+  --color-accent-50: #ecfdff;
+  --color-accent-100: #d2f7fc;
+  --color-accent-200: #a8eef8;
+  --color-accent-300: #92eaf6;
+  --color-accent-400: #4fd6ea;
+  --color-accent-500: #21bcd6;
+  --color-accent-600: #1597b3;
+  --color-accent-700: #167890;
+  --color-accent-800: #196274;
+  --color-accent-900: #184e5e;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-mulish);
+  --font-display: var(--font-dm-serif);
   --font-mono: var(--font-geist-mono);
 }
 
 :root {
-  --background: #f8fafc;
-  --foreground: #172554;
+  --background: #f4f8f9;
+  --foreground: #252e32;
 }
 
 body {
@@ -54,17 +57,23 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Display headings use the church's serif face */
+h1,
+h2 {
+  font-family: var(--font-display), Georgia, "Times New Roman", serif;
+}
+
 /* Bracket connector lines */
 .bracket-line-top {
   flex: 1;
-  border-right: 2px solid #bfdbfe;
-  border-bottom: 2px solid #bfdbfe;
+  border-right: 2px solid #aedde6;
+  border-bottom: 2px solid #aedde6;
   border-bottom-right-radius: 4px;
 }
 
 .bracket-line-bottom {
   flex: 1;
-  border-right: 2px solid #bfdbfe;
-  border-top: 2px solid #bfdbfe;
+  border-right: 2px solid #aedde6;
+  border-top: 2px solid #aedde6;
   border-top-right-radius: 4px;
 }

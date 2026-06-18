@@ -1,10 +1,14 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { DM_Serif_Text, Mulish, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import Navigation from '@/components/Navigation';
 import { createClient } from '@/lib/supabase/server';
 
-const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] });
+// Fonts matched to Christ Fellowship Church's site (cfcbirmingham.org):
+// DM Serif Text for display headings; Mulish as a clean geometric stand-in
+// for the church's body face ("Soleil", an Adobe Typekit font).
+const dmSerif = DM_Serif_Text({ variable: '--font-dm-serif', subsets: ['latin'], weight: '400' });
+const mulish = Mulish({ variable: '--font-mulish', subsets: ['latin'] });
 const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] });
 
 export const metadata: Metadata = {
@@ -27,7 +31,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   }
 
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full`}>
+    <html lang="en" className={`${mulish.variable} ${dmSerif.variable} ${geistMono.variable} h-full`}>
       <body className="min-h-full flex flex-col antialiased">
         <Navigation user={profile} />
         <main className="flex-1">{children}</main>
