@@ -10,7 +10,15 @@ export interface Profile {
   display_name: string;
   skill_level: number | null;
   is_admin: boolean;
+  is_managed: boolean;
+  email: string | null;
   created_at: string;
+}
+
+export interface AppSettings {
+  id: number;
+  require_email: boolean;
+  updated_at: string;
 }
 
 export interface Tournament {

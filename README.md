@@ -48,8 +48,9 @@ npm install
 2. In the **SQL Editor**, run each file in `supabase/migrations/` in order:
    - `001_initial_schema.sql` — tables, RLS, and triggers
    - `002_promote_admin.sql` — promote a specific email to admin (edit the address first)
-   - `003_signup_skill_and_realtime.sql` — capture skill level at signup + enable realtime brackets
+   - `003_email_optional_and_managed_players.sql` — admin email-optional toggle + roster-only (managed) players
    - `004_doubles.sql` — doubles support (event type, team partner, entry-based matches). Regenerate any pre-existing brackets after applying it
+   - `005_signup_skill_and_realtime.sql` — capture skill level (and email) at signup + enable realtime brackets
 
 ### 3. Configure Environment Variables
 

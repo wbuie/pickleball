@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
@@ -15,16 +15,52 @@ export default function RegisterForm() {
   const [knowsDupr, setKnowsDupr] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  // Whether an email is required is controlled by the admin (app_settings).
+  const [requireEmail, setRequireEmail] = useState(true);
+  // Set once an email-backed signup needs the user to confirm via email.
   const [confirmEmail, setConfirmEmail] = useState(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase
+      .from('app_settings')
+      .select('require_email')
+      .eq('id', 1)
+      .single()
+      .then(({ data }) => {
+        if (data) setRequireEmail(data.require_email);
+      });
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+
+    // No-email path: only available when the admin has made email optional and
+    // the player left it blank. Creates a roster-only profile (no login).
+    if (!requireEmail && !email.trim()) {
+      setLoading(true);
+      const res = await fetch('/api/auth/register-managed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ display_name: displayName, skill_level: skillLevel }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || 'Registration failed');
+        setLoading(false);
+        return;
+      }
+      router.push('/tournaments?registered=1');
+      router.refresh();
+      return;
+    }
+
     if (password.length < 6) {
       setError('Password must be at least 6 characters');
       return;
     }
     setLoading(true);
-    setError('');
 
     const supabase = createClient();
 
@@ -105,7 +141,9 @@ export default function RegisterForm() {
             </div>
 
             <div>
-              <label htmlFor="reg-email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <label htmlFor="reg-email" className="block text-sm font-medium text-gray-700 mb-1">
+                Email{!requireEmail && <span className="text-gray-400 font-normal"> (optional)</span>}
+              </label>
               <input
                 id="reg-email"
                 type="email"
@@ -113,25 +151,33 @@ export default function RegisterForm() {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                required
+                required={requireEmail}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
               />
+              {!requireEmail && (
+                <p className="text-xs text-gray-400 mt-1">
+                  No email? Leave this blank to join the roster — an admin will add you to tournaments.
+                </p>
+              )}
             </div>
 
-            <div>
-              <label htmlFor="reg-password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-              <input
-                id="reg-password"
-                type="password"
-                autoComplete="new-password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="Min. 6 characters"
-                required
-                minLength={6}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-              />
-            </div>
+            {/* Password is only needed when registering with an email (login account). */}
+            {(requireEmail || email.trim() !== '') && (
+              <div>
+                <label htmlFor="reg-password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <input
+                  id="reg-password"
+                  type="password"
+                  autoComplete="new-password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="Min. 6 characters"
+                  required
+                  minLength={6}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                />
+              </div>
+            )}
 
             {/* Skill level */}
             <div>

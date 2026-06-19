@@ -7,10 +7,18 @@ import { SkillBadge } from '@/components/ui/Badge';
 import type { Tournament, TournamentRegistration } from '@/lib/types/app';
 import { FORMAT_LABELS, STATUS_LABELS, EVENT_LABELS, entryName, entrySkill } from '@/lib/types/app';
 
+interface MemberOption {
+  id: string;
+  display_name: string;
+  skill_level: number | null;
+  is_admin: boolean;
+  is_managed: boolean;
+}
+
 interface AdminPanelProps {
   tournament: Tournament;
   registrations: TournamentRegistration[];
-  members: { id: string; display_name: string }[];
+  members: MemberOption[];
 }
 
 export default function AdminPanel({ tournament, registrations, members }: AdminPanelProps) {
@@ -23,6 +31,8 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [pendingPartner, setPendingPartner] = useState<Record<string, string>>({});
+  const [playerToAdd, setPlayerToAdd] = useState('');
+  const [addingPlayer, setAddingPlayer] = useState(false);
   const [seeds, setSeeds] = useState<Record<string, number>>(() => {
     const s: Record<string, number> = {};
     registrations.forEach((r, i) => {
@@ -33,6 +43,14 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
 
   const isBracketGenerated = tournament.status === 'active' || tournament.status === 'completed';
   const unpairedCount = isDoubles ? registrations.filter(r => !r.partner_id).length : 0;
+
+  // Everyone currently in this tournament (captains + partners).
+  const enrolled = new Set<string>();
+  registrations.forEach(r => {
+    enrolled.add(r.player_id);
+    if (r.partner_id) enrolled.add(r.partner_id);
+  });
+  const availableProfiles = members.filter(m => !m.is_admin && !enrolled.has(m.id));
 
   // Players who are locked onto a complete team (captain-with-partner or partner)
   // and so can't be offered as a partner for someone else.
@@ -45,6 +63,27 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
   });
   const candidatesFor = (reg: TournamentRegistration) =>
     members.filter(m => m.id !== reg.player_id && !pairedPlayers.has(m.id));
+
+  const handleAddPlayer = async () => {
+    if (!playerToAdd) return;
+    setAddingPlayer(true);
+    setError('');
+    setSuccess('');
+    const res = await fetch(`/api/tournaments/${id}/register-player`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ player_id: playerToAdd }),
+    });
+    if (res.ok) {
+      setSuccess(isDoubles ? 'Player added — pair them into a team below.' : 'Player added!');
+      setPlayerToAdd('');
+      router.refresh();
+    } else {
+      const data = await res.json();
+      setError(data.error || 'Failed to add player');
+    }
+    setAddingPlayer(false);
+  };
 
   const handleSaveSeeds = async () => {
     setError('');
@@ -220,6 +259,47 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
               );
             })}
         </div>
+
+        {!isBracketGenerated && (
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <label htmlFor="add-player" className="block text-xs font-medium text-gray-600 mb-1.5">
+              Add an existing {isDoubles ? 'player (as a solo entry to pair)' : 'player'} to this tournament
+            </label>
+            <div className="flex gap-2">
+              <select
+                id="add-player"
+                value={playerToAdd}
+                onChange={e => setPlayerToAdd(e.target.value)}
+                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              >
+                <option value="">
+                  {availableProfiles.length ? 'Select a player…' : 'No unregistered players'}
+                </option>
+                {availableProfiles.map(p => (
+                  <option key={p.id} value={p.id}>
+                    {p.display_name}
+                    {p.skill_level ? ` (${p.skill_level.toFixed(1)})` : ''}
+                    {p.is_managed ? ' — roster' : ''}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={handleAddPlayer}
+                disabled={!playerToAdd || addingPlayer}
+                className="bg-white border border-brand-300 text-brand-700 text-sm font-medium px-4 py-2 rounded-lg hover:bg-brand-50 transition-colors disabled:opacity-50"
+              >
+                {addingPlayer ? 'Adding…' : 'Add'}
+              </button>
+            </div>
+            <p className="text-xs text-gray-400 mt-1.5">
+              Need someone not listed?{' '}
+              <Link href="/admin" className="text-brand-600 hover:underline">
+                Add or import players
+              </Link>
+              .
+            </p>
+          </div>
+        )}
 
         {!isBracketGenerated && registrations.length > 0 && (
           <div className="mt-4 pt-4 border-t border-gray-100 flex gap-3">

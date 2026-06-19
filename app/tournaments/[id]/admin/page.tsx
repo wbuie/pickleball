@@ -36,21 +36,18 @@ export default async function AdminPage({
     .eq('tournament_id', id)
     .order('seed', { ascending: true, nullsFirst: false });
 
-  // For doubles team-building, the admin can pair from the full member list.
-  let members: { id: string; display_name: string }[] = [];
-  if (tournament.event_type === 'doubles') {
-    const { data } = await supabase
-      .from('profiles')
-      .select('id, display_name')
-      .order('display_name', { ascending: true });
-    members = data || [];
-  }
+  // Full member roster — used both for adding an existing player to the
+  // tournament and (in doubles) for pairing teams.
+  const { data: members } = await supabase
+    .from('profiles')
+    .select('id, display_name, skill_level, is_admin, is_managed')
+    .order('display_name', { ascending: true });
 
   return (
     <AdminPanel
       tournament={tournament}
       registrations={(registrations || []) as TournamentRegistration[]}
-      members={members}
+      members={members || []}
     />
   );
 }
