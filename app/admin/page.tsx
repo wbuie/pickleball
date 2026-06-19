@@ -32,6 +32,7 @@ export default async function AdminPage() {
     <AdminDashboard
       settings={(settings as AppSettings) ?? { id: 1, require_email: true, updated_at: '' }}
       players={(players as Profile[]) ?? []}
+      currentUserId={user.id}
     />
   );
 }

@@ -9,9 +9,10 @@ import type { AppSettings, Profile } from '@/lib/types/app';
 interface Props {
   settings: AppSettings;
   players: Profile[];
+  currentUserId: string;
 }
 
-export default function AdminDashboard({ settings, players }: Props) {
+export default function AdminDashboard({ settings, players, currentUserId }: Props) {
   const router = useRouter();
 
   const [requireEmail, setRequireEmail] = useState(settings.require_email);
@@ -105,6 +106,27 @@ export default function AdminDashboard({ settings, players }: Props) {
       setImporting(false);
       // Reset the input so the same file can be re-selected.
       e.target.value = '';
+    }
+  };
+
+  const handleToggleAdmin = async (id: string, makeAdmin: boolean) => {
+    if (
+      !makeAdmin &&
+      !confirm('Remove admin access from this person?')
+    ) {
+      return;
+    }
+    setError('');
+    const res = await fetch(`/api/players/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_admin: makeAdmin }),
+    });
+    if (res.ok) {
+      router.refresh();
+    } else {
+      const data = await res.json();
+      setError(data.error || 'Failed to update admin access');
     }
   };
 
@@ -250,6 +272,22 @@ export default function AdminDashboard({ settings, players }: Props) {
                 )}
               </span>
               <SkillBadge level={p.skill_level} />
+              {/* Admin access (login accounts only). You can't demote yourself. */}
+              {!p.is_managed && p.id === currentUserId && (
+                <span className="text-gray-400 text-xs">you</span>
+              )}
+              {!p.is_managed && p.id !== currentUserId && (
+                <button
+                  onClick={() => handleToggleAdmin(p.id, !p.is_admin)}
+                  className={`text-xs font-medium px-2 py-1 rounded transition-colors ${
+                    p.is_admin
+                      ? 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
+                      : 'text-brand-700 hover:bg-brand-50'
+                  }`}
+                >
+                  {p.is_admin ? 'Remove admin' : 'Make admin'}
+                </button>
+              )}
               {p.is_managed && (
                 <button
                   onClick={() => handleDelete(p.id)}
