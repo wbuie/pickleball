@@ -94,7 +94,6 @@ export default function SingleEliminationBracket({
                     const pairSlotHeight = slotHeight * 2;
                     const topMatch = pairIdx * pairSlotHeight + slotHeight / 2 - BASE_HEIGHT / 2 + 2;
                     const bottomMatch = topMatch + slotHeight;
-                    const midY = topMatch + BASE_HEIGHT / 2 + slotHeight / 2;
                     const connectorHeight = bottomMatch - topMatch + BASE_HEIGHT;
 
                     return (

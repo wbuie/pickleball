@@ -58,6 +58,8 @@ export async function POST(
 
     // Assign seeds if not already set (by skill level, descending)
     const unseeded = registrations.filter(r => r.seed === null);
+    let players: { id: string; seed: number }[];
+
     if (unseeded.length > 0) {
       // Sort by skill level descending for seeding
       const sorted = [...registrations].sort((a, b) => {
@@ -83,21 +85,23 @@ export async function POST(
         .eq('tournament_id', id)
         .order('seed', { ascending: true });
 
-      const players = (reseeded || []).map(r => ({ id: r.player_id, seed: r.seed! }));
-
-      if (tournament.format === 'single_elimination') {
-        await generateSingleEliminationBracket(supabase, id, players);
-      } else {
-        await generateDoubleEliminationBracket(supabase, id, players);
-      }
+      players = (reseeded || []).map(r => ({ id: r.player_id, seed: r.seed! }));
     } else {
-      const players = registrations.map(r => ({ id: r.player_id, seed: r.seed! }));
+      players = registrations.map(r => ({ id: r.player_id, seed: r.seed! }));
+    }
 
+    // Generation isn't a single transaction, so if it fails partway we tear the
+    // partial bracket back out rather than leaving the tournament half-wired.
+    try {
       if (tournament.format === 'single_elimination') {
         await generateSingleEliminationBracket(supabase, id, players);
       } else {
         await generateDoubleEliminationBracket(supabase, id, players);
       }
+    } catch (genErr) {
+      await supabase.from('matches').delete().eq('tournament_id', id);
+      await supabase.from('tournaments').update({ status: 'registration' }).eq('id', id);
+      throw genErr;
     }
 
     return NextResponse.json({ success: true });

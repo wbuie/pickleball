@@ -53,10 +53,11 @@ export default function NewTournamentPage() {
       <div className="bg-white rounded-2xl shadow-sm border border-brand-100 p-6">
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="t-name" className="block text-sm font-medium text-gray-700 mb-1">
               Tournament Name <span className="text-red-500">*</span>
             </label>
             <input
+              id="t-name"
               name="name"
               type="text"
               placeholder="Spring Open 2025"
@@ -66,8 +67,9 @@ export default function NewTournamentPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <label htmlFor="t-description" className="block text-sm font-medium text-gray-700 mb-1">Description</label>
             <textarea
+              id="t-description"
               name="description"
               placeholder="Details about the tournament, rules, prizes, etc."
               rows={3}
@@ -77,10 +79,11 @@ export default function NewTournamentPage() {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="t-format" className="block text-sm font-medium text-gray-700 mb-1">
                 Format <span className="text-red-500">*</span>
               </label>
               <select
+                id="t-format"
                 name="format"
                 required
                 defaultValue="single_elimination"
@@ -92,10 +95,11 @@ export default function NewTournamentPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="t-max-players" className="block text-sm font-medium text-gray-700 mb-1">
                 Max Players <span className="text-red-500">*</span>
               </label>
               <select
+                id="t-max-players"
                 name="max_players"
                 required
                 defaultValue="16"
@@ -110,8 +114,9 @@ export default function NewTournamentPage() {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+              <label htmlFor="t-start-date" className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
               <input
+                id="t-start-date"
                 name="start_date"
                 type="date"
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
@@ -119,8 +124,9 @@ export default function NewTournamentPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+              <label htmlFor="t-location" className="block text-sm font-medium text-gray-700 mb-1">Location</label>
               <input
+                id="t-location"
                 name="location"
                 type="text"
                 placeholder="City Park Courts"

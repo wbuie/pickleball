@@ -1,20 +1,42 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import SingleEliminationBracket from './SingleEliminationBracket';
 import DoubleEliminationBracket from './DoubleEliminationBracket';
 import ScoreModal from '@/components/admin/ScoreModal';
+import { createClient } from '@/lib/supabase/client';
 import type { Match, Profile, BracketGrid, TournamentFormat } from '@/lib/types/app';
 
 interface BracketViewerProps {
+  tournamentId: string;
   matches: Match[];
   players: Profile[];
   format: TournamentFormat;
   isAdmin?: boolean;
 }
 
-export default function BracketViewer({ matches, players, format, isAdmin }: BracketViewerProps) {
+export default function BracketViewer({ tournamentId, matches, players, format, isAdmin }: BracketViewerProps) {
+  const router = useRouter();
   const [scoringMatchId, setScoringMatchId] = useState<string | null>(null);
+
+  // Live updates: refresh the server-rendered bracket whenever a match in this
+  // tournament changes, so spectators see scores roll in without refreshing.
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`matches:${tournamentId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'matches', filter: `tournament_id=eq.${tournamentId}` },
+        () => router.refresh()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [tournamentId, router]);
 
   const playerMap = new Map<string, Profile>(players.map(p => [p.id, p]));
 
@@ -76,7 +98,7 @@ export default function BracketViewer({ matches, players, format, isAdmin }: Bra
           onClose={() => setScoringMatchId(null)}
           onSuccess={() => {
             setScoringMatchId(null);
-            window.location.reload();
+            router.refresh();
           }}
         />
       )}

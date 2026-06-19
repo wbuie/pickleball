@@ -116,6 +116,11 @@ export const SKILL_DESCRIPTIONS: {
     title: 'Highly competitive',
     description: 'Tournament-level player with a complete, refined game.',
   },
+  {
+    value: '5.0',
+    title: 'Pro',
+    description: 'Elite, professional-level play — mastery of every shot and strategy.',
+  },
 ];
 
 export const STATUS_LABELS: Record<TournamentStatus, string> = {

@@ -16,26 +16,16 @@ type MatchInsert = {
   status: string;
 };
 
-type InsertedMatch = {
-  id: string;
-  round: number;
-  position: number;
-  bracket_type: string;
-  player1_id: string | null;
-  player2_id: string | null;
-  status: string;
-};
-
 // Returns matches per LB round: rounds alternate between "drop-in" and "fight-back"
 // LB round 1 = fight-back (WB R1 losers fight each other)
 // LB round 2 = drop-in (WB R2 losers join LB R1 survivors)
 // LB round 3 = fight-back, etc.
-function getLBMatchCount(lbRound: number, bracketSize: number): number {
+export function getLBMatchCount(lbRound: number, bracketSize: number): number {
   const k = Math.ceil(lbRound / 2);
   return bracketSize / Math.pow(2, k + 1);
 }
 
-function getLBRoundCount(wbRounds: number): number {
+export function getLBRoundCount(wbRounds: number): number {
   return 2 * (wbRounds - 1);
 }
 
@@ -131,16 +121,15 @@ export async function generateDoubleEliminationBracket(
   updates.push({ id: wb(wbRounds, 0).id, winner_next_match_id: gf(1).id, winner_next_slot: 1 });
 
   // === WIRE WB LOSER DROPS TO LB ===
-  // WB round 1 losers → LB round 1 (fight-back)
-  // Using reversed order so top half of WB goes to bottom half of LB (avoids rematches)
+  // WB round 1 losers → LB round 1 (fight-back). Adjacent WB matches feed one LB
+  // match (0+1 → 0, 2+3 → 1, …). No crossing is needed here: a WB R1 loser and
+  // the player who beat them are never both in LB R1, so there's no rematch risk.
+  // (Cross-seeding matters for the later drop-in rounds, handled below.)
   const wbR1Count = bracketSize / 2;
   for (let pos = 0; pos < wbR1Count; pos++) {
-    // LB round 1 has wbR1Count / 2 matches; pair positions 0+1 → match 0, 2+3 → match 1, etc.
     const lbPos = Math.floor(pos / 2);
     const lbSlot = (pos % 2) + 1;
-    // Cross seeding: reverse within each pair to avoid rematches
-    const crossedPos = lbPos;
-    updates.push({ id: wb(1, pos).id, loser_next_match_id: lb(1, crossedPos).id, loser_next_slot: lbSlot });
+    updates.push({ id: wb(1, pos).id, loser_next_match_id: lb(1, lbPos).id, loser_next_slot: lbSlot });
   }
 
   // WB rounds 2+ losers → LB drop-in rounds (even LB rounds)

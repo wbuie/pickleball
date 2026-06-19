@@ -1,11 +1,39 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import BracketViewer from '@/components/bracket/BracketViewer';
 import RegisterButton from '@/components/tournaments/RegisterButton';
 import { StatusBadge, SkillBadge } from '@/components/ui/Badge';
-import { FORMAT_LABELS } from '@/lib/types/app';
+import { FORMAT_LABELS, STATUS_LABELS } from '@/lib/types/app';
 import type { Match, Profile } from '@/lib/types/app';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const supabase = await createClient();
+  const { data: tournament } = await supabase
+    .from('tournaments')
+    .select('name, description, format, status')
+    .eq('id', id)
+    .single();
+
+  if (!tournament) return { title: 'Tournament Not Found – CFC Pickleball League' };
+
+  const title = `${tournament.name} – CFC Pickleball League`;
+  const description =
+    tournament.description ||
+    `${FORMAT_LABELS[tournament.format as 'single_elimination' | 'double_elimination']} · ${STATUS_LABELS[tournament.status as keyof typeof STATUS_LABELS]}. Hosted by Christ Fellowship Church, Birmingham.`;
+
+  return {
+    title,
+    description,
+    openGraph: { title, description, type: 'website' },
+  };
+}
 
 export default async function TournamentPage({
   params,
@@ -130,6 +158,7 @@ export default async function TournamentPage({
         <div className="lg:col-span-3 bg-white rounded-2xl shadow-sm border border-brand-100 p-6">
           <h2 className="font-bold text-gray-900 text-xl mb-5">Bracket</h2>
           <BracketViewer
+            tournamentId={id}
             matches={(matches || []) as Match[]}
             players={players}
             format={tournament.format as 'single_elimination' | 'double_elimination'}

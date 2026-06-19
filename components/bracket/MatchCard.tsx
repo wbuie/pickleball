@@ -9,24 +9,24 @@ interface MatchCardProps {
   compact?: boolean;
 }
 
-export default function MatchCard({ match, isAdmin, onScoreClick, compact = false }: MatchCardProps) {
-  const isCompleted = match.status === 'completed';
-  const isBye = match.status === 'bye';
-  const isClickable = isAdmin && !isCompleted && !isBye && match.player1_id && match.player2_id;
-
-  const PlayerRow = ({
-    player,
-    score,
-    isWinner,
-    isLoser,
-    label,
-  }: {
-    player?: Profile | null;
-    score: number | null;
-    isWinner: boolean;
-    isLoser: boolean;
-    label: string;
-  }) => (
+// Hoisted out of the parent so it isn't recreated on every render
+// (React 19 `react-hooks/static-components`).
+function PlayerRow({
+  player,
+  score,
+  isWinner,
+  isLoser,
+  isCompleted,
+  label,
+}: {
+  player?: Profile | null;
+  score: number | null;
+  isWinner: boolean;
+  isLoser: boolean;
+  isCompleted: boolean;
+  label: string;
+}) {
+  return (
     <div
       className={`flex items-center justify-between px-2.5 py-1.5 min-w-0 ${
         isWinner
@@ -41,9 +41,7 @@ export default function MatchCard({ match, isAdmin, onScoreClick, compact = fals
           isWinner ? 'text-brand-800 font-bold' : 'text-gray-700'
         }`}
       >
-        {player ? player.display_name : (
-          <span className="text-gray-400 italic">{label}</span>
-        )}
+        {player ? player.display_name : <span className="text-gray-400 italic">{label}</span>}
       </span>
       {isCompleted && (
         <span
@@ -56,6 +54,14 @@ export default function MatchCard({ match, isAdmin, onScoreClick, compact = fals
       )}
     </div>
   );
+}
+
+export default function MatchCard({ match, isAdmin, onScoreClick, compact = false }: MatchCardProps) {
+  const isCompleted = match.status === 'completed';
+  const isBye = match.status === 'bye';
+  const bothPlayers = Boolean(match.player1_id && match.player2_id);
+  // Admins can score a ready match, or edit one that's already completed.
+  const isClickable = Boolean(isAdmin && !isBye && bothPlayers);
 
   const p1IsWinner = isCompleted && match.winner_id === match.player1_id;
   const p2IsWinner = isCompleted && match.winner_id === match.player2_id;
@@ -76,15 +82,23 @@ export default function MatchCard({ match, isAdmin, onScoreClick, compact = fals
     );
   }
 
+  const Wrapper = isClickable ? 'button' : 'div';
+
   return (
-    <div
-      className={`bg-white border rounded-lg overflow-hidden shadow-sm transition-all ${
+    <Wrapper
+      type={isClickable ? 'button' : undefined}
+      aria-label={
+        isClickable
+          ? `${isCompleted ? 'Edit score' : 'Enter score'} for ${match.player1?.display_name ?? 'TBD'} versus ${match.player2?.display_name ?? 'TBD'}`
+          : undefined
+      }
+      className={`block w-full text-left bg-white border rounded-lg overflow-hidden shadow-sm transition-all ${
         compact ? 'w-40' : 'w-48'
       } ${
-        isCompleted
+        isClickable
+          ? 'cursor-pointer hover:shadow-md ' + (isCompleted ? 'border-brand-200 hover:border-brand-400' : 'border-accent-400 hover:border-accent-500')
+          : isCompleted
           ? 'border-brand-200'
-          : isClickable
-          ? 'border-accent-400 cursor-pointer hover:shadow-md hover:border-accent-500'
           : 'border-gray-200'
       }`}
       onClick={() => isClickable && onScoreClick?.(match.id)}
@@ -94,6 +108,7 @@ export default function MatchCard({ match, isAdmin, onScoreClick, compact = fals
         score={match.player1_score}
         isWinner={p1IsWinner}
         isLoser={isCompleted && !p1IsWinner}
+        isCompleted={isCompleted}
         label="TBD"
       />
       <div className="border-t border-gray-100" />
@@ -102,13 +117,20 @@ export default function MatchCard({ match, isAdmin, onScoreClick, compact = fals
         score={match.player2_score}
         isWinner={p2IsWinner}
         isLoser={isCompleted && !p2IsWinner}
+        isCompleted={isCompleted}
         label="TBD"
       />
       {isClickable && (
-        <div className="bg-accent-50 border-t border-accent-200 px-2.5 py-1 text-center">
-          <span className="text-accent-700 text-xs font-medium">Enter Score</span>
+        <div
+          className={`border-t px-2.5 py-1 text-center ${
+            isCompleted ? 'bg-brand-50 border-brand-100' : 'bg-accent-50 border-accent-200'
+          }`}
+        >
+          <span className={`text-xs font-medium ${isCompleted ? 'text-brand-700' : 'text-accent-700'}`}>
+            {isCompleted ? 'Edit Score' : 'Enter Score'}
+          </span>
         </div>
       )}
-    </div>
+    </Wrapper>
   );
 }
