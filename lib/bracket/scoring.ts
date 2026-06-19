@@ -153,5 +153,12 @@ export async function recordMatchResult(
       .from('tournaments')
       .update({ status: isReset || isGF1WithWBWinner ? 'completed' : 'active' })
       .eq('id', match.tournament_id);
+  } else if (!match.winner_next_match_id) {
+    // Single elimination has no grand finals — the one match with nowhere to
+    // advance the winner is the championship. Completing it ends the tournament.
+    await supabase
+      .from('tournaments')
+      .update({ status: 'completed' })
+      .eq('id', match.tournament_id);
   }
 }
