@@ -156,6 +156,12 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
         <div className="text-right text-sm">
           <p className="text-gray-400">{EVENT_LABELS[tournament.event_type]} · {FORMAT_LABELS[tournament.format]}</p>
           <p className="font-medium text-gray-700">{STATUS_LABELS[tournament.status]}</p>
+          <Link
+            href={`/tournaments/${id}/edit`}
+            className="inline-block mt-1.5 text-brand-700 border border-brand-300 px-3 py-1 rounded-lg hover:bg-brand-50 transition-colors"
+          >
+            Edit details
+          </Link>
         </div>
       </div>
 
