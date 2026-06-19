@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { DM_Serif_Text, Mulish, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import Navigation from '@/components/Navigation';
+import PickleballMark from '@/components/PickleballMark';
 import { createClient } from '@/lib/supabase/server';
 
 // Fonts matched to Christ Fellowship Church's site (cfcbirmingham.org):
@@ -35,8 +36,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className="min-h-full flex flex-col antialiased">
         <Navigation user={profile} />
         <main className="flex-1">{children}</main>
-        <footer className="bg-brand-900 text-brand-300 text-center text-xs py-4 mt-auto">
-          <p>CFC Pickleball League · Christ Fellowship Church, Birmingham 🏓</p>
+        <footer className="bg-brand-900 text-brand-300 text-xs py-4 mt-auto">
+          <p className="flex items-center justify-center gap-1.5">
+            <PickleballMark className="w-4 h-4 text-brand-300" />
+            CFC Pickleball League · Christ Fellowship Church, Birmingham
+          </p>
         </footer>
       </body>
     </html>

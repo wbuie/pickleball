@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import PickleballMark from '@/components/PickleballMark';
 
 export default function LoginForm() {
   const router = useRouter();
@@ -33,7 +34,7 @@ export default function LoginForm() {
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <span className="text-5xl">🏓</span>
+          <PickleballMark className="w-14 h-14 mx-auto text-brand-500" />
           <h1 className="text-2xl font-bold text-brand-900 mt-3">Welcome back</h1>
           <p className="text-gray-500 mt-1">Sign in to the CFC Pickleball League</p>
         </div>
