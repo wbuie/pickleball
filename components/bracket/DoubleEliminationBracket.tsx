@@ -20,7 +20,7 @@ function enrichMatch(match: Match, playerMap: Map<string, BracketEntry>) {
   };
 }
 
-const BASE_HEIGHT = 76;
+const BASE_HEIGHT = 96;
 
 function BracketSection({
   title,
@@ -45,16 +45,20 @@ function BracketSection({
     ...Object.values(roundData).map(r => r.length),
     1
   );
-  const totalHeight = maxMatches * BASE_HEIGHT + 40;
+  // Floor for the section height. Cards flow with flexbox (no absolute
+  // positioning), so a two-line doubles name or the "Enter Score" footer can
+  // make a card taller than expected without ever overlapping its neighbour —
+  // the column simply grows. `justify-around` keeps each round's matches
+  // vertically centred against the midpoints of the previous round.
+  const minSectionHeight = maxMatches * BASE_HEIGHT + 40;
 
   return (
     <div className={`rounded-xl p-4 ${bgColor}`}>
       <h3 className="text-sm font-bold text-brand-800 uppercase tracking-wider mb-3">{title}</h3>
       <div className="overflow-x-auto">
-        <div className="flex gap-0 min-w-max" style={{ height: totalHeight }}>
+        <div className="flex gap-0 min-w-max" style={{ minHeight: minSectionHeight }}>
           {Array.from({ length: rounds }, (_, i) => i + 1).map(round => {
             const matches = (roundData[round] || []).map(m => enrichMatch(m, playerMap));
-            const count = matches.length;
 
             return (
               <div key={round} className="flex flex-col" style={{ width: 200 }}>
@@ -63,27 +67,16 @@ function BracketSection({
                     {getRoundLabel(round)}
                   </span>
                 </div>
-                <div
-                  className="relative flex-1 flex flex-col gap-2"
-                  style={{ height: maxMatches * BASE_HEIGHT }}
-                >
-                  {matches.map((match, idx) => {
-                    const slotHeight = (maxMatches * BASE_HEIGHT) / count;
-                    const topOffset = idx * slotHeight + slotHeight / 2 - BASE_HEIGHT / 2 + 2;
-                    return (
-                      <div
-                        key={match.id}
-                        className="absolute"
-                        style={{ top: topOffset, left: 8, right: 8 }}
-                      >
-                        <MatchCard
-                          match={match}
-                          isAdmin={isAdmin}
-                          onScoreClick={onScoreClick}
-                        />
-                      </div>
-                    );
-                  })}
+                <div className="flex-1 flex flex-col justify-around gap-3 px-2 py-1">
+                  {matches.map(match => (
+                    <div key={match.id} className="flex justify-center">
+                      <MatchCard
+                        match={match}
+                        isAdmin={isAdmin}
+                        onScoreClick={onScoreClick}
+                      />
+                    </div>
+                  ))}
                 </div>
               </div>
             );
