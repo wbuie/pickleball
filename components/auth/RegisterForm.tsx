@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import PickleballMark from '@/components/PickleballMark';
 import { SKILL_LEVELS, SKILL_DESCRIPTIONS } from '@/lib/types/app';
 
 export default function RegisterForm() {
@@ -116,7 +117,7 @@ export default function RegisterForm() {
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <span className="text-5xl">🏓</span>
+          <PickleballMark className="w-14 h-14 mx-auto text-brand-500" />
           <p className="text-accent-600 font-semibold tracking-wide uppercase text-xs mt-2">
             Christ Fellowship Church
           </p>
