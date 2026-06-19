@@ -25,6 +25,11 @@ export default function AdminDashboard({ settings, players, currentUserId }: Pro
   const [importing, setImporting] = useState(false);
   const [importMsg, setImportMsg] = useState('');
 
+  // Inline skill (DUPR) editing — one player at a time.
+  const [editingSkillId, setEditingSkillId] = useState<string | null>(null);
+  const [skillDraft, setSkillDraft] = useState('3.0');
+  const [savingSkill, setSavingSkill] = useState(false);
+
   const [error, setError] = useState('');
 
   const managedCount = players.filter(p => p.is_managed).length;
@@ -128,6 +133,30 @@ export default function AdminDashboard({ settings, players, currentUserId }: Pro
       const data = await res.json();
       setError(data.error || 'Failed to update admin access');
     }
+  };
+
+  const startEditSkill = (p: Profile) => {
+    setError('');
+    setEditingSkillId(p.id);
+    setSkillDraft((p.skill_level ?? 3.0).toFixed(1));
+  };
+
+  const handleSaveSkill = async (id: string) => {
+    setSavingSkill(true);
+    setError('');
+    const res = await fetch(`/api/players/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ skill_level: skillDraft }),
+    });
+    if (res.ok) {
+      setEditingSkillId(null);
+      router.refresh();
+    } else {
+      const data = await res.json();
+      setError(data.error || 'Failed to update rating');
+    }
+    setSavingSkill(false);
   };
 
   const handleDelete = async (id: string) => {
@@ -271,7 +300,43 @@ export default function AdminDashboard({ settings, players, currentUserId }: Pro
                   <span className="ml-2 text-gray-400 text-xs">roster only</span>
                 )}
               </span>
-              <SkillBadge level={p.skill_level} />
+              {editingSkillId === p.id ? (
+                <div className="flex items-center gap-1.5">
+                  <select
+                    aria-label={`DUPR rating for ${p.display_name}`}
+                    value={skillDraft}
+                    onChange={e => setSkillDraft(e.target.value)}
+                    className="border border-gray-300 rounded-lg px-2 py-1 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  >
+                    {SKILL_LEVELS.map(l => (
+                      <option key={l.value} value={l.value}>{l.label}</option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={() => handleSaveSkill(p.id)}
+                    disabled={savingSkill}
+                    className="text-xs font-medium text-white bg-brand-700 hover:bg-brand-600 px-2 py-1 rounded transition-colors disabled:opacity-50"
+                  >
+                    {savingSkill ? 'Saving…' : 'Save'}
+                  </button>
+                  <button
+                    onClick={() => setEditingSkillId(null)}
+                    disabled={savingSkill}
+                    className="text-xs font-medium text-gray-500 hover:bg-gray-100 px-2 py-1 rounded transition-colors disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => startEditSkill(p)}
+                  title="Edit DUPR rating"
+                  className="group inline-flex items-center gap-1 rounded transition-colors"
+                >
+                  <SkillBadge level={p.skill_level} />
+                  <span className="text-[10px] text-gray-400 group-hover:text-brand-600">edit</span>
+                </button>
+              )}
               {/* Admin access (login accounts only). You can't demote yourself. */}
               {!p.is_managed && p.id === currentUserId && (
                 <span className="text-gray-400 text-xs">you</span>

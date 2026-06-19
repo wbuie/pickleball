@@ -157,13 +157,16 @@ export async function generateDoubleEliminationBracket(
 
     for (let pos = 0; pos < matchCount; pos++) {
       if (isFightBack) {
-        // Fight-back round: winner goes to next round (drop-in), paired position
+        // Fight-back → drop-in: the next (drop-in) round has the same match
+        // count, so the survivor stays in the same position and takes slot 1.
+        // Slot 2 of that match is reserved for the dropping WB loser.
+        updates.push({ id: lb(lbRound, pos).id, winner_next_match_id: lb(lbRound + 1, pos).id, winner_next_slot: 1 });
+      } else {
+        // Drop-in → fight-back: the next (fight-back) round has half as many
+        // matches, so adjacent survivors are paired into one match.
         const nextPos = Math.floor(pos / 2);
         const nextSlot = (pos % 2) + 1;
         updates.push({ id: lb(lbRound, pos).id, winner_next_match_id: lb(lbRound + 1, nextPos).id, winner_next_slot: nextSlot });
-      } else {
-        // Drop-in round: winner goes to next fight-back round, same position
-        updates.push({ id: lb(lbRound, pos).id, winner_next_match_id: lb(lbRound + 1, pos).id, winner_next_slot: 1 });
       }
     }
   }
@@ -177,10 +180,78 @@ export async function generateDoubleEliminationBracket(
   // We set winner_next_match_id on GF1 to GF2 for the case LB champ wins (handled in scoring)
   updates.push({ id: gf(1).id, winner_next_match_id: gf(2).id, winner_next_slot: 1, loser_next_match_id: gf(2).id, loser_next_slot: 2 });
 
+  // === COLLAPSE LOSER-BRACKET BYES ===
+  // A WB round-1 bye produces a winner but no loser, so the LB slot that loser
+  // would have dropped into never fills. Left alone, the LB match it feeds would
+  // be stuck forever waiting for a second player. We resolve this statically:
+  //  - If both incoming slots of an LB match are dead, the match is a bye and
+  //    its own winner slot downstream becomes dead too (cascade).
+  //  - If only one slot is dead, the match is a pass-through: we rewire the live
+  //    feeder to skip it and point straight at this match's downstream target,
+  //    then mark the skipped match as a bye. This collapses the empty matches
+  //    out of the live bracket so scoring never sees a half-filled LB match.
+  const deadSlots = new Set<string>();
+  const byeMatchIds = new Set<string>();
+
+  type Feeder = { update: MatchUpdate; edge: 'winner' | 'loser' };
+  const findFeeder = (matchId: string, slot: number): Feeder | null => {
+    for (const u of updates) {
+      if (u.loser_next_match_id === matchId && u.loser_next_slot === slot) return { update: u, edge: 'loser' };
+      if (u.winner_next_match_id === matchId && u.winner_next_slot === slot) return { update: u, edge: 'winner' };
+    }
+    return null;
+  };
+
+  // Seed: each WB round-1 bye kills the LB slot its absent loser would fill.
+  for (const m of inserted) {
+    if (m.bracket_type === 'winners' && m.round === 1 && m.status === 'bye') {
+      const drop = updates.find(u => u.id === m.id && u.loser_next_match_id);
+      if (drop?.loser_next_match_id) deadSlots.add(`${drop.loser_next_match_id}:${drop.loser_next_slot}`);
+    }
+  }
+
+  // Walk LB rounds in order so a match's feeders are settled before it's processed.
+  for (let lbRound = 1; lbRound <= lbRounds; lbRound++) {
+    const matchCount = getLBMatchCount(lbRound, bracketSize);
+    for (let pos = 0; pos < matchCount; pos++) {
+      const m = lb(lbRound, pos);
+      const s1Dead = deadSlots.has(`${m.id}:1`);
+      const s2Dead = deadSlots.has(`${m.id}:2`);
+      if (!s1Dead && !s2Dead) continue;
+
+      byeMatchIds.add(m.id);
+      const wn = updates.find(u => u.id === m.id && u.winner_next_match_id);
+
+      if (s1Dead && s2Dead) {
+        // No one can ever come out of here — kill the downstream slot too.
+        if (wn?.winner_next_match_id) deadSlots.add(`${wn.winner_next_match_id}:${wn.winner_next_slot}`);
+      } else if (wn?.winner_next_match_id) {
+        // Pass-through: route the live feeder straight to our downstream target.
+        const liveSlot = s1Dead ? 2 : 1;
+        const feeder = findFeeder(m.id, liveSlot);
+        if (feeder) {
+          if (feeder.edge === 'loser') {
+            feeder.update.loser_next_match_id = wn.winner_next_match_id;
+            feeder.update.loser_next_slot = wn.winner_next_slot;
+          } else {
+            feeder.update.winner_next_match_id = wn.winner_next_match_id;
+            feeder.update.winner_next_slot = wn.winner_next_slot;
+          }
+        }
+      }
+    }
+  }
+
   // === APPLY UPDATES ===
   for (const update of updates) {
     const { id, ...fields } = update;
     await supabase.from('matches').update(fields).eq('id', id);
+  }
+
+  // Mark the collapsed LB matches as byes so they render as such and never
+  // sit waiting for players that will never arrive.
+  for (const id of byeMatchIds) {
+    await supabase.from('matches').update({ status: 'bye' }).eq('id', id);
   }
 
   // === HANDLE WB BYE ADVANCEMENT ===

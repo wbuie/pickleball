@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
-// Update a player's admin status. Admin only.
+// Update a player's admin status and/or skill (DUPR) rating. Admin only.
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -24,16 +24,39 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    if (typeof body.is_admin !== 'boolean') {
+    const hasAdmin = 'is_admin' in body;
+    const hasSkill = 'skill_level' in body;
+
+    if (!hasAdmin && !hasSkill) {
+      return NextResponse.json(
+        { error: 'Nothing to update — provide is_admin and/or skill_level' },
+        { status: 400 }
+      );
+    }
+    if (hasAdmin && typeof body.is_admin !== 'boolean') {
       return NextResponse.json({ error: 'is_admin must be a boolean' }, { status: 400 });
     }
 
-    // Guard against self-lockout: an admin can't demote themselves.
-    if (id === user.id && body.is_admin === false) {
-      return NextResponse.json(
-        { error: "You can't remove your own admin access." },
-        { status: 400 }
-      );
+    const update: { is_admin?: boolean; skill_level?: number } = {};
+
+    if (hasAdmin) {
+      // Guard against self-lockout: an admin can't demote themselves.
+      if (id === user.id && body.is_admin === false) {
+        return NextResponse.json(
+          { error: "You can't remove your own admin access." },
+          { status: 400 }
+        );
+      }
+      update.is_admin = body.is_admin;
+    }
+
+    if (hasSkill) {
+      const skill = parseFloat(body.skill_level);
+      if (Number.isNaN(skill)) {
+        return NextResponse.json({ error: 'Skill must be a number between 2.0 and 5.0' }, { status: 400 });
+      }
+      // Clamp to the supported range and snap to the 0.5 steps used elsewhere.
+      update.skill_level = Math.round(Math.min(5.0, Math.max(2.0, skill)) * 2) / 2;
     }
 
     const { data: target } = await supabase
@@ -44,7 +67,7 @@ export async function PATCH(
 
     if (!target) return NextResponse.json({ error: 'Player not found' }, { status: 404 });
     // Roster-only players have no login, so admin rights are meaningless.
-    if (target.is_managed && body.is_admin === true) {
+    if (target.is_managed && update.is_admin === true) {
       return NextResponse.json(
         { error: 'Roster-only players have no login and cannot be made admins.' },
         { status: 400 }
@@ -53,7 +76,7 @@ export async function PATCH(
 
     const { data, error } = await supabase
       .from('profiles')
-      .update({ is_admin: body.is_admin })
+      .update(update)
       .eq('id', id)
       .select()
       .single();
