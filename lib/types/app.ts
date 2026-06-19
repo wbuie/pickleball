@@ -1,5 +1,6 @@
 export type SkillLevel = 2.0 | 2.5 | 3.0 | 3.5 | 4.0 | 4.5 | 5.0;
 export type TournamentFormat = 'single_elimination' | 'double_elimination';
+export type EventType = 'singles' | 'doubles';
 export type TournamentStatus = 'registration' | 'seeding' | 'active' | 'completed';
 export type MatchStatus = 'pending' | 'bye' | 'in_progress' | 'completed';
 export type BracketType = 'winners' | 'losers' | 'grand_finals';
@@ -17,6 +18,7 @@ export interface Tournament {
   name: string;
   description: string | null;
   format: TournamentFormat;
+  event_type: EventType;
   status: TournamentStatus;
   max_players: number;
   start_date: string | null;
@@ -30,9 +32,18 @@ export interface TournamentRegistration {
   id: string;
   tournament_id: string;
   player_id: string;
+  partner_id: string | null;
   seed: number | null;
   registered_at: string;
   profiles?: Profile;
+  partner?: Profile | null;
+}
+
+// A bracket "slot" — the entity that plays a match. In singles this is one
+// person; in doubles it's a two-person team. Identified by the registration id.
+export interface BracketEntry {
+  id: string;
+  display_name: string;
 }
 
 export interface Match {
@@ -53,9 +64,9 @@ export interface Match {
   winner_next_slot: 1 | 2 | null;
   loser_next_slot: 1 | 2 | null;
   created_at: string;
-  player1?: Profile;
-  player2?: Profile;
-  winner?: Profile;
+  player1?: BracketEntry;
+  player2?: BracketEntry;
+  winner?: BracketEntry;
 }
 
 export interface TournamentWithCounts extends Tournament {
@@ -134,3 +145,27 @@ export const FORMAT_LABELS: Record<TournamentFormat, string> = {
   single_elimination: 'Single Elimination',
   double_elimination: 'Double Elimination',
 };
+
+export const EVENT_LABELS: Record<EventType, string> = {
+  singles: 'Singles',
+  doubles: 'Doubles',
+};
+
+// Display name for an entry: the captain alone (singles), or both partners
+// joined with a slash (doubles).
+export function entryName(reg: Pick<TournamentRegistration, 'profiles' | 'partner'>): string {
+  const captain = reg.profiles?.display_name ?? 'Unknown';
+  const partner = reg.partner?.display_name;
+  return partner ? `${captain} / ${partner}` : captain;
+}
+
+// Seeding value for an entry: the team's average skill in doubles, otherwise the
+// individual's. Missing ratings fall back to 3.0 (the default skill level).
+export function entrySkill(reg: Pick<TournamentRegistration, 'profiles' | 'partner'>): number {
+  const a = reg.profiles?.skill_level ?? 3.0;
+  if (reg.partner) {
+    const b = reg.partner.skill_level ?? 3.0;
+    return (a + b) / 2;
+  }
+  return a;
+}

@@ -4,42 +4,57 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { SkillBadge } from '@/components/ui/Badge';
-import type { Tournament, TournamentRegistration, Profile } from '@/lib/types/app';
-import { FORMAT_LABELS, STATUS_LABELS } from '@/lib/types/app';
+import type { Tournament, TournamentRegistration } from '@/lib/types/app';
+import { FORMAT_LABELS, STATUS_LABELS, EVENT_LABELS, entryName, entrySkill } from '@/lib/types/app';
 
 interface AdminPanelProps {
   tournament: Tournament;
   registrations: TournamentRegistration[];
+  members: { id: string; display_name: string }[];
 }
 
-export default function AdminPanel({ tournament, registrations }: AdminPanelProps) {
+export default function AdminPanel({ tournament, registrations, members }: AdminPanelProps) {
   const router = useRouter();
   const id = tournament.id;
+  const isDoubles = tournament.event_type === 'doubles';
+  const entryNoun = isDoubles ? 'Teams' : 'Players';
 
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [pendingPartner, setPendingPartner] = useState<Record<string, string>>({});
   const [seeds, setSeeds] = useState<Record<string, number>>(() => {
     const s: Record<string, number> = {};
     registrations.forEach((r, i) => {
-      s[r.player_id] = r.seed ?? i + 1;
+      s[r.id] = r.seed ?? i + 1;
     });
     return s;
   });
 
   const isBracketGenerated = tournament.status === 'active' || tournament.status === 'completed';
+  const unpairedCount = isDoubles ? registrations.filter(r => !r.partner_id).length : 0;
+
+  // Players who are locked onto a complete team (captain-with-partner or partner)
+  // and so can't be offered as a partner for someone else.
+  const pairedPlayers = new Set<string>();
+  registrations.forEach(r => {
+    if (r.partner_id) {
+      pairedPlayers.add(r.player_id);
+      pairedPlayers.add(r.partner_id);
+    }
+  });
+  const candidatesFor = (reg: TournamentRegistration) =>
+    members.filter(m => m.id !== reg.player_id && !pairedPlayers.has(m.id));
 
   const handleSaveSeeds = async () => {
     setError('');
     setSuccess('');
-    const seedArray = Object.entries(seeds).map(([player_id, seed]) => ({ player_id, seed }));
-
+    const seedArray = Object.entries(seeds).map(([id, seed]) => ({ id, seed }));
     const res = await fetch(`/api/tournaments/${id}/seed`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ seeds: seedArray }),
     });
-
     if (res.ok) {
       setSuccess('Seeds saved!');
       router.refresh();
@@ -53,9 +68,7 @@ export default function AdminPanel({ tournament, registrations }: AdminPanelProp
     if (!confirm('Generate the bracket? This will lock registrations and start the tournament.')) return;
     setGenerating(true);
     setError('');
-
     const res = await fetch(`/api/tournaments/${id}/bracket/generate`, { method: 'POST' });
-
     if (res.ok) {
       setSuccess('Bracket generated!');
       router.push(`/tournaments/${id}`);
@@ -67,17 +80,28 @@ export default function AdminPanel({ tournament, registrations }: AdminPanelProp
   };
 
   const handleAutoSeed = () => {
-    const sorted = [...registrations].sort((a, b) => {
-      const aSkill = (a.profiles as Profile)?.skill_level ?? 3.0;
-      const bSkill = (b.profiles as Profile)?.skill_level ?? 3.0;
-      return bSkill - aSkill;
-    });
-
+    const sorted = [...registrations].sort((a, b) => entrySkill(b) - entrySkill(a));
     const newSeeds: Record<string, number> = {};
     sorted.forEach((r, i) => {
-      newSeeds[r.player_id] = i + 1;
+      newSeeds[r.id] = i + 1;
     });
     setSeeds(newSeeds);
+  };
+
+  const teamAction = async (body: Record<string, string>) => {
+    setError('');
+    setSuccess('');
+    const res = await fetch(`/api/tournaments/${id}/teams`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (res.ok) {
+      router.refresh();
+    } else {
+      const data = await res.json();
+      setError(data.error || 'Failed to update teams');
+    }
   };
 
   return (
@@ -91,7 +115,7 @@ export default function AdminPanel({ tournament, registrations }: AdminPanelProp
           <p className="text-gray-500 text-sm mt-0.5">{tournament.name}</p>
         </div>
         <div className="text-right text-sm">
-          <p className="text-gray-400">{FORMAT_LABELS[tournament.format]}</p>
+          <p className="text-gray-400">{EVENT_LABELS[tournament.event_type]} · {FORMAT_LABELS[tournament.format]}</p>
           <p className="font-medium text-gray-700">{STATUS_LABELS[tournament.status]}</p>
         </div>
       </div>
@@ -103,10 +127,10 @@ export default function AdminPanel({ tournament, registrations }: AdminPanelProp
         <div role="status" className="bg-brand-50 border border-brand-200 text-brand-700 rounded-xl px-4 py-3 mb-4 text-sm">{success}</div>
       )}
 
-      {/* Player Seeding */}
+      {/* Seeding + team building */}
       <div className="bg-white rounded-2xl shadow-sm border border-brand-100 p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-gray-900">Players ({registrations.length})</h2>
+          <h2 className="text-lg font-bold text-gray-900">{entryNoun} ({registrations.length})</h2>
           {!isBracketGenerated && registrations.length > 0 && (
             <button
               onClick={handleAutoSeed}
@@ -118,30 +142,34 @@ export default function AdminPanel({ tournament, registrations }: AdminPanelProp
         </div>
 
         {registrations.length === 0 && (
-          <p className="text-gray-400 text-sm italic">No players registered</p>
+          <p className="text-gray-400 text-sm italic">No {isDoubles ? 'teams' : 'players'} registered</p>
+        )}
+
+        {isDoubles && !isBracketGenerated && unpairedCount > 0 && (
+          <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl px-4 py-2.5 mb-4 text-sm">
+            {unpairedCount} {unpairedCount === 1 ? 'entry needs' : 'entries need'} a partner before you can
+            generate the bracket. Pair them below.
+          </div>
         )}
 
         <div className="space-y-2">
           {registrations
             .slice()
-            .sort((a, b) => (seeds[a.player_id] ?? 99) - (seeds[b.player_id] ?? 99))
+            .sort((a, b) => (seeds[a.id] ?? 99) - (seeds[b.id] ?? 99))
             .map(reg => {
-              const p = reg.profiles as Profile;
+              const unpaired = isDoubles && !reg.partner_id;
               return (
-                <div key={reg.id} className="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0">
+                <div key={reg.id} className="flex flex-wrap items-center gap-3 py-2 border-b border-gray-50 last:border-0">
                   <div className="flex-shrink-0">
                     {!isBracketGenerated ? (
                       <input
                         type="number"
                         min="1"
                         max={registrations.length}
-                        aria-label={`Seed for ${p?.display_name ?? 'player'}`}
-                        value={seeds[reg.player_id] ?? ''}
+                        aria-label={`Seed for ${entryName(reg)}`}
+                        value={seeds[reg.id] ?? ''}
                         onChange={e =>
-                          setSeeds(prev => ({
-                            ...prev,
-                            [reg.player_id]: parseInt(e.target.value) || 0,
-                          }))
+                          setSeeds(prev => ({ ...prev, [reg.id]: parseInt(e.target.value) || 0 }))
                         }
                         className="w-14 border border-gray-200 rounded-lg px-2 py-1 text-sm text-center focus:outline-none focus:ring-2 focus:ring-brand-500"
                       />
@@ -149,8 +177,45 @@ export default function AdminPanel({ tournament, registrations }: AdminPanelProp
                       <span className="w-14 text-center text-gray-400 text-sm inline-block">#{reg.seed}</span>
                     )}
                   </div>
-                  <span className="flex-1 font-medium text-gray-800">{p?.display_name}</span>
-                  <SkillBadge level={p?.skill_level ?? null} />
+                  <span className="flex-1 min-w-[8rem] font-medium text-gray-800">
+                    {entryName(reg)}
+                    {unpaired && <span className="ml-1 text-amber-600 text-xs font-normal">· solo</span>}
+                  </span>
+                  <SkillBadge level={entrySkill(reg)} />
+
+                  {isDoubles && !isBracketGenerated && (
+                    unpaired ? (
+                      <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <select
+                          aria-label={`Partner for ${entryName(reg)}`}
+                          value={pendingPartner[reg.id] ?? ''}
+                          onChange={e => setPendingPartner(prev => ({ ...prev, [reg.id]: e.target.value }))}
+                          className="flex-1 sm:flex-none border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                        >
+                          <option value="">Pair with…</option>
+                          {candidatesFor(reg).map(m => (
+                            <option key={m.id} value={m.id}>{m.display_name}</option>
+                          ))}
+                        </select>
+                        <button
+                          disabled={!pendingPartner[reg.id]}
+                          onClick={() =>
+                            teamAction({ action: 'pair', registrationId: reg.id, partnerPlayerId: pendingPartner[reg.id] })
+                          }
+                          className="text-sm bg-brand-700 hover:bg-brand-600 text-white px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors"
+                        >
+                          Pair
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => teamAction({ action: 'unpair', registrationId: reg.id })}
+                        className="text-xs text-gray-500 border border-gray-200 px-2.5 py-1 rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        Unpair
+                      </button>
+                    )
+                  )}
                 </div>
               );
             })}
@@ -166,7 +231,7 @@ export default function AdminPanel({ tournament, registrations }: AdminPanelProp
             </button>
             <button
               onClick={handleGenerateBracket}
-              disabled={generating || registrations.length < 2}
+              disabled={generating || registrations.length < 2 || unpairedCount > 0}
               className="flex-1 bg-brand-700 hover:bg-brand-600 text-white text-sm font-bold py-2 rounded-lg disabled:opacity-50 transition-colors"
             >
               {generating ? 'Generating…' : '🏆 Generate Bracket'}
@@ -191,6 +256,10 @@ export default function AdminPanel({ tournament, registrations }: AdminPanelProp
         <h2 className="text-lg font-bold text-gray-900 mb-4">Tournament Info</h2>
         <dl className="space-y-2 text-sm">
           <div className="flex gap-2">
+            <dt className="text-gray-500 w-32">Event</dt>
+            <dd className="font-medium text-gray-800">{EVENT_LABELS[tournament.event_type]}</dd>
+          </div>
+          <div className="flex gap-2">
             <dt className="text-gray-500 w-32">Format</dt>
             <dd className="font-medium text-gray-800">{FORMAT_LABELS[tournament.format]}</dd>
           </div>
@@ -199,7 +268,7 @@ export default function AdminPanel({ tournament, registrations }: AdminPanelProp
             <dd className="font-medium text-gray-800">{STATUS_LABELS[tournament.status]}</dd>
           </div>
           <div className="flex gap-2">
-            <dt className="text-gray-500 w-32">Max Players</dt>
+            <dt className="text-gray-500 w-32">Max {entryNoun}</dt>
             <dd className="font-medium text-gray-800">{tournament.max_players}</dd>
           </div>
           {tournament.start_date && (

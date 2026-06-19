@@ -32,25 +32,25 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { seeds } = body as { seeds: { player_id: string; seed: number }[] };
+    const { seeds } = body as { seeds: { id: string; seed: number }[] };
 
     if (!Array.isArray(seeds) || seeds.length === 0) {
       return NextResponse.json({ error: 'No seeds provided' }, { status: 400 });
     }
-    if (seeds.some(s => !s.player_id || !Number.isInteger(s.seed) || s.seed < 1)) {
+    if (seeds.some(s => !s.id || !Number.isInteger(s.seed) || s.seed < 1)) {
       return NextResponse.json({ error: 'Each seed must be a whole number of at least 1' }, { status: 400 });
     }
     const seedValues = seeds.map(s => s.seed);
     if (new Set(seedValues).size !== seedValues.length) {
-      return NextResponse.json({ error: 'Seeds must be unique — two players have the same seed' }, { status: 400 });
+      return NextResponse.json({ error: 'Seeds must be unique — two entries have the same seed' }, { status: 400 });
     }
 
-    for (const { player_id, seed } of seeds) {
+    for (const { id: registrationId, seed } of seeds) {
       await supabase
         .from('tournament_registrations')
         .update({ seed })
         .eq('tournament_id', id)
-        .eq('player_id', player_id);
+        .eq('id', registrationId);
     }
 
     return NextResponse.json({ success: true });

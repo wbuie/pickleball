@@ -6,12 +6,12 @@ import SingleEliminationBracket from './SingleEliminationBracket';
 import DoubleEliminationBracket from './DoubleEliminationBracket';
 import ScoreModal from '@/components/admin/ScoreModal';
 import { createClient } from '@/lib/supabase/client';
-import type { Match, Profile, BracketGrid, TournamentFormat } from '@/lib/types/app';
+import type { Match, BracketEntry, BracketGrid, TournamentFormat } from '@/lib/types/app';
 
 interface BracketViewerProps {
   tournamentId: string;
   matches: Match[];
-  players: Profile[];
+  players: BracketEntry[];
   format: TournamentFormat;
   isAdmin?: boolean;
 }
@@ -38,7 +38,7 @@ export default function BracketViewer({ tournamentId, matches, players, format, 
     };
   }, [tournamentId, router]);
 
-  const playerMap = new Map<string, Profile>(players.map(p => [p.id, p]));
+  const playerMap = new Map<string, BracketEntry>(players.map(p => [p.id, p]));
 
   // Group matches into grid
   const grid: BracketGrid = { winners: {}, losers: {}, grandFinals: [] };

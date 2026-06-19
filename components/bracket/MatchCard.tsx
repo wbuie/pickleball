@@ -1,9 +1,9 @@
 'use client';
 
-import type { Match, Profile } from '@/lib/types/app';
+import type { Match, BracketEntry } from '@/lib/types/app';
 
 interface MatchCardProps {
-  match: Match & { player1?: Profile; player2?: Profile };
+  match: Match & { player1?: BracketEntry; player2?: BracketEntry };
   isAdmin?: boolean;
   onScoreClick?: (matchId: string) => void;
   compact?: boolean;
@@ -19,7 +19,7 @@ function PlayerRow({
   isCompleted,
   label,
 }: {
-  player?: Profile | null;
+  player?: BracketEntry | null;
   score: number | null;
   isWinner: boolean;
   isLoser: boolean;

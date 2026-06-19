@@ -4,6 +4,7 @@ A pickleball tournament hosting web app for **Christ Fellowship Church, Birmingh
 
 ## Features
 
+- **Singles & Doubles** — Each tournament is a singles or doubles event. Doubles entries are two-player teams: a player can pick their partner when registering, or an organizer can pair players on the admin panel. Teams are seeded by their average skill
 - **Player Registration** — Players create accounts and set their skill level by either picking a plain-language description ("Brand new", "Recreational", "Advanced", …) or entering a DUPR rating (2.0–5.0) if they know it
 - **Tournament Management** — Admins create tournaments with format, date, location, and capacity
 - **Single Elimination** — Standard knockout bracket with proper seeding and byes
@@ -48,6 +49,7 @@ npm install
    - `001_initial_schema.sql` — tables, RLS, and triggers
    - `002_promote_admin.sql` — promote a specific email to admin (edit the address first)
    - `003_signup_skill_and_realtime.sql` — capture skill level at signup + enable realtime brackets
+   - `004_doubles.sql` — doubles support (event type, team partner, entry-based matches). Regenerate any pre-existing brackets after applying it
 
 ### 3. Configure Environment Variables
 

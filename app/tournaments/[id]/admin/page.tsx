@@ -32,14 +32,25 @@ export default async function AdminPage({
 
   const { data: registrations } = await supabase
     .from('tournament_registrations')
-    .select('*, profiles(*)')
+    .select('*, profiles:player_id(*), partner:partner_id(*)')
     .eq('tournament_id', id)
     .order('seed', { ascending: true, nullsFirst: false });
+
+  // For doubles team-building, the admin can pair from the full member list.
+  let members: { id: string; display_name: string }[] = [];
+  if (tournament.event_type === 'doubles') {
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, display_name')
+      .order('display_name', { ascending: true });
+    members = data || [];
+  }
 
   return (
     <AdminPanel
       tournament={tournament}
       registrations={(registrations || []) as TournamentRegistration[]}
+      members={members}
     />
   );
 }

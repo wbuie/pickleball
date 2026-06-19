@@ -41,53 +41,64 @@ export async function POST(
       return NextResponse.json({ error: 'Bracket already generated' }, { status: 400 });
     }
 
-    // Get registered players with seeds
+    // Get registered entries (an entry is one player in singles, a team in
+    // doubles) with each side's skill for seeding.
     const { data: registrations } = await supabase
       .from('tournament_registrations')
-      .select('player_id, seed, profiles(skill_level, display_name)')
+      .select('id, player_id, partner_id, seed, profiles:player_id(skill_level), partner:partner_id(skill_level)')
       .eq('tournament_id', id)
       .order('seed', { ascending: true, nullsFirst: false });
 
     if (!registrations || registrations.length < 2) {
-      return NextResponse.json({ error: 'Need at least 2 registered players' }, { status: 400 });
+      return NextResponse.json({ error: 'Need at least 2 entries' }, { status: 400 });
     }
 
     if (tournament.format === 'double_elimination' && registrations.length < 4) {
-      return NextResponse.json({ error: 'Double elimination requires at least 4 players' }, { status: 400 });
+      return NextResponse.json({ error: 'Double elimination requires at least 4 entries' }, { status: 400 });
     }
 
-    // Assign seeds if not already set (by skill level, descending)
+    // Doubles: every entry must be a complete two-player team before play.
+    if (tournament.event_type === 'doubles') {
+      const incomplete = registrations.filter(r => !r.partner_id).length;
+      if (incomplete > 0) {
+        return NextResponse.json(
+          { error: `${incomplete} ${incomplete === 1 ? 'entry has' : 'entries have'} no partner — pair or remove them before generating the bracket` },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Team skill = average of both partners' ratings (just the player in singles).
+    const skillOf = (r: (typeof registrations)[number]): number => {
+      const cap = (r.profiles as unknown as { skill_level: number | null } | null)?.skill_level ?? 3.0;
+      const par = (r.partner as unknown as { skill_level: number | null } | null)?.skill_level;
+      return r.partner_id ? (cap + (par ?? 3.0)) / 2 : cap;
+    };
+
+    // Assign seeds if not already set (by skill, descending).
     const unseeded = registrations.filter(r => r.seed === null);
     let players: { id: string; seed: number }[];
 
     if (unseeded.length > 0) {
-      // Sort by skill level descending for seeding
-      const sorted = [...registrations].sort((a, b) => {
-        const aProf = a.profiles as unknown as { skill_level: number | null } | null;
-        const bProf = b.profiles as unknown as { skill_level: number | null } | null;
-        const aSkill = aProf?.skill_level ?? 3.0;
-        const bSkill = bProf?.skill_level ?? 3.0;
-        return bSkill - aSkill;
-      });
+      const sorted = [...registrations].sort((a, b) => skillOf(b) - skillOf(a));
 
       for (let i = 0; i < sorted.length; i++) {
         await supabase
           .from('tournament_registrations')
           .update({ seed: i + 1 })
-          .eq('tournament_id', id)
-          .eq('player_id', sorted[i].player_id);
+          .eq('id', sorted[i].id);
       }
 
       // Re-fetch with updated seeds
       const { data: reseeded } = await supabase
         .from('tournament_registrations')
-        .select('player_id, seed')
+        .select('id, seed')
         .eq('tournament_id', id)
         .order('seed', { ascending: true });
 
-      players = (reseeded || []).map(r => ({ id: r.player_id, seed: r.seed! }));
+      players = (reseeded || []).map(r => ({ id: r.id, seed: r.seed! }));
     } else {
-      players = registrations.map(r => ({ id: r.player_id, seed: r.seed! }));
+      players = registrations.map(r => ({ id: r.id, seed: r.seed! }));
     }
 
     // Generation isn't a single transaction, so if it fails partway we tear the

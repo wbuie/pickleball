@@ -18,6 +18,7 @@ export default function NewTournamentPage() {
       name: form.get('name'),
       description: form.get('description'),
       format: form.get('format'),
+      event_type: form.get('event_type'),
       max_players: parseInt(form.get('max_players') as string),
       start_date: form.get('start_date') || null,
       location: form.get('location') || null,
@@ -77,6 +78,22 @@ export default function NewTournamentPage() {
             />
           </div>
 
+          <div>
+            <label htmlFor="t-event-type" className="block text-sm font-medium text-gray-700 mb-1">
+              Event <span className="text-red-500">*</span>
+            </label>
+            <select
+              id="t-event-type"
+              name="event_type"
+              required
+              defaultValue="singles"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-white"
+            >
+              <option value="singles">Singles (one player per entry)</option>
+              <option value="doubles">Doubles (two-player teams)</option>
+            </select>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label htmlFor="t-format" className="block text-sm font-medium text-gray-700 mb-1">
@@ -96,7 +113,7 @@ export default function NewTournamentPage() {
 
             <div>
               <label htmlFor="t-max-players" className="block text-sm font-medium text-gray-700 mb-1">
-                Max Players <span className="text-red-500">*</span>
+                Max Entries <span className="text-red-500">*</span>
               </label>
               <select
                 id="t-max-players"
@@ -106,9 +123,10 @@ export default function NewTournamentPage() {
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-white"
               >
                 {[4, 8, 16, 32, 64].map(n => (
-                  <option key={n} value={n}>{n} players</option>
+                  <option key={n} value={n}>{n} entries</option>
                 ))}
               </select>
+              <p className="text-xs text-gray-400 mt-1">Players for singles, teams for doubles</p>
             </div>
           </div>
 

@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import type { Match, Profile } from '@/lib/types/app';
+import type { Match, BracketEntry } from '@/lib/types/app';
 
 interface ScoreModalProps {
-  match: Match & { player1?: Profile; player2?: Profile };
+  match: Match & { player1?: BracketEntry; player2?: BracketEntry };
   onClose: () => void;
   onSuccess: () => void;
 }

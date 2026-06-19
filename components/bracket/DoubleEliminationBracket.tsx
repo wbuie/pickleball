@@ -1,17 +1,17 @@
 'use client';
 
 import MatchCard from './MatchCard';
-import type { Match, Profile, BracketGrid } from '@/lib/types/app';
+import type { Match, BracketEntry, BracketGrid } from '@/lib/types/app';
 import { getWinnersRoundCount, getLosersRoundCount } from '@/lib/bracket/utils';
 
 interface DoubleEliminationBracketProps {
   grid: BracketGrid;
-  playerMap: Map<string, Profile>;
+  playerMap: Map<string, BracketEntry>;
   isAdmin?: boolean;
   onScoreClick?: (matchId: string) => void;
 }
 
-function enrichMatch(match: Match, playerMap: Map<string, Profile>) {
+function enrichMatch(match: Match, playerMap: Map<string, BracketEntry>) {
   return {
     ...match,
     player1: match.player1_id ? playerMap.get(match.player1_id) : undefined,
@@ -35,7 +35,7 @@ function BracketSection({
   title: string;
   rounds: number;
   roundData: Record<number, Match[]>;
-  playerMap: Map<string, Profile>;
+  playerMap: Map<string, BracketEntry>;
   isAdmin?: boolean;
   onScoreClick?: (matchId: string) => void;
   getRoundLabel: (r: number) => string;
