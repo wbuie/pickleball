@@ -14,6 +14,9 @@ export default function AdminPage() {
 
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [registrations, setRegistrations] = useState<TournamentRegistration[]>([]);
+  const [allProfiles, setAllProfiles] = useState<Profile[]>([]);
+  const [playerToAdd, setPlayerToAdd] = useState('');
+  const [addingPlayer, setAddingPlayer] = useState(false);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
@@ -28,9 +31,14 @@ export default function AdminPage() {
       .select('*, profiles(*)')
       .eq('tournament_id', id)
       .order('seed', { ascending: true, nullsFirst: false });
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('*')
+      .order('display_name', { ascending: true });
 
     setTournament(t);
     setRegistrations(regs || []);
+    setAllProfiles((profiles as Profile[]) || []);
 
     // Initialize seeds
     const s: Record<string, number> = {};
@@ -84,6 +92,29 @@ export default function AdminPage() {
     setGenerating(false);
   };
 
+  const handleAddPlayer = async () => {
+    if (!playerToAdd) return;
+    setAddingPlayer(true);
+    setError('');
+    setSuccess('');
+
+    const res = await fetch(`/api/tournaments/${id}/register-player`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ player_id: playerToAdd }),
+    });
+
+    if (res.ok) {
+      setSuccess('Player added!');
+      setPlayerToAdd('');
+      await loadData();
+    } else {
+      const data = await res.json();
+      setError(data.error || 'Failed to add player');
+    }
+    setAddingPlayer(false);
+  };
+
   const handleAutoSeed = () => {
     const sorted = [...registrations].sort((a, b) => {
       const aSkill = (a.profiles as Profile)?.skill_level ?? 3.0;
@@ -109,6 +140,9 @@ export default function AdminPage() {
   if (!tournament) return <div className="p-10 text-center text-gray-500">Tournament not found</div>;
 
   const isBracketGenerated = tournament.status === 'active' || tournament.status === 'completed';
+
+  const registeredIds = new Set(registrations.map(r => r.player_id));
+  const availableProfiles = allProfiles.filter(p => !p.is_admin && !registeredIds.has(p.id));
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
@@ -186,6 +220,46 @@ export default function AdminPage() {
               );
             })}
         </div>
+
+        {!isBracketGenerated && (
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">
+              Add an existing player to this tournament
+            </label>
+            <div className="flex gap-2">
+              <select
+                value={playerToAdd}
+                onChange={e => setPlayerToAdd(e.target.value)}
+                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              >
+                <option value="">
+                  {availableProfiles.length ? 'Select a player…' : 'No unregistered players'}
+                </option>
+                {availableProfiles.map(p => (
+                  <option key={p.id} value={p.id}>
+                    {p.display_name}
+                    {p.skill_level ? ` (${p.skill_level.toFixed(1)})` : ''}
+                    {p.is_managed ? ' — roster' : ''}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={handleAddPlayer}
+                disabled={!playerToAdd || addingPlayer}
+                className="bg-white border border-brand-300 text-brand-700 text-sm font-medium px-4 py-2 rounded-lg hover:bg-brand-50 transition-colors disabled:opacity-50"
+              >
+                {addingPlayer ? 'Adding…' : 'Add'}
+              </button>
+            </div>
+            <p className="text-xs text-gray-400 mt-1.5">
+              Need someone not listed?{' '}
+              <Link href="/admin" className="text-brand-600 hover:underline">
+                Add or import players
+              </Link>
+              .
+            </p>
+          </div>
+        )}
 
         {!isBracketGenerated && registrations.length > 0 && (
           <div className="mt-4 pt-4 border-t border-gray-100 flex gap-3">

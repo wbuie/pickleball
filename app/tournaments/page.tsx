@@ -3,7 +3,12 @@ import { createClient } from '@/lib/supabase/server';
 import TournamentCard from '@/components/tournaments/TournamentCard';
 import type { TournamentWithCounts } from '@/lib/types/app';
 
-export default async function TournamentsPage() {
+export default async function TournamentsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ registered?: string }>;
+}) {
+  const { registered } = await searchParams;
   const supabase = await createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
@@ -48,6 +53,12 @@ export default async function TournamentsPage() {
           </Link>
         )}
       </div>
+
+      {registered === '1' && (
+        <div className="bg-brand-50 border border-brand-200 text-brand-800 rounded-xl px-4 py-3 mb-6 text-sm">
+          ✓ You&apos;re on the roster! An admin will add you to tournaments — no login needed.
+        </div>
+      )}
 
       {enriched.length === 0 && (
         <div className="text-center py-20 text-gray-400">
