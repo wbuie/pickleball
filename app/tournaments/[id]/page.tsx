@@ -167,12 +167,20 @@ export default async function TournamentPage({
             )}
 
             {profile?.is_admin && (
-              <Link
-                href={`/tournaments/${id}/admin`}
-                className="bg-brand-700 hover:bg-brand-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
-              >
-                Admin Panel
-              </Link>
+              <div className="flex gap-2">
+                <Link
+                  href={`/tournaments/${id}/edit`}
+                  className="border border-brand-300 text-brand-700 hover:bg-brand-50 text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+                >
+                  Edit
+                </Link>
+                <Link
+                  href={`/tournaments/${id}/admin`}
+                  className="bg-brand-700 hover:bg-brand-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+                >
+                  Admin Panel
+                </Link>
+              </div>
             )}
           </div>
         </div>
