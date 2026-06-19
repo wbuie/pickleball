@@ -93,6 +93,8 @@ export default function Navigation({ user }: NavigationProps) {
           <button
             className="md:hidden p-2 rounded-lg text-brand-100 hover:bg-brand-700"
             onClick={() => setMenuOpen(!menuOpen)}
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={menuOpen}
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               {menuOpen ? (

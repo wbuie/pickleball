@@ -1,17 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import type { Match, Profile } from '@/lib/types/app';
+import type { Match, BracketEntry } from '@/lib/types/app';
 
 interface ScoreModalProps {
-  match: Match & { player1?: Profile; player2?: Profile };
+  match: Match & { player1?: BracketEntry; player2?: BracketEntry };
   onClose: () => void;
   onSuccess: () => void;
 }
 
 export default function ScoreModal({ match, onClose, onSuccess }: ScoreModalProps) {
-  const [p1Score, setP1Score] = useState('');
-  const [p2Score, setP2Score] = useState('');
+  const isEdit = match.status === 'completed';
+  const [p1Score, setP1Score] = useState(match.player1_score?.toString() ?? '');
+  const [p2Score, setP2Score] = useState(match.player2_score?.toString() ?? '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -56,7 +57,7 @@ export default function ScoreModal({ match, onClose, onSuccess }: ScoreModalProp
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
         <div className="bg-brand-800 text-white px-6 py-4 rounded-t-2xl">
-          <h2 className="font-bold text-lg">Enter Score</h2>
+          <h2 className="font-bold text-lg">{isEdit ? 'Edit Score' : 'Enter Score'}</h2>
           <p className="text-brand-200 text-sm mt-0.5">
             {match.bracket_type === 'winners' && `WB Round ${match.round}`}
             {match.bracket_type === 'losers' && `LB Round ${match.round}`}
@@ -68,10 +69,11 @@ export default function ScoreModal({ match, onClose, onSuccess }: ScoreModalProp
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {/* Player 1 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="p1-score" className="block text-sm font-medium text-gray-700 mb-1">
               {match.player1?.display_name ?? 'Player 1'}
             </label>
             <input
+              id="p1-score"
               type="number"
               min="0"
               max="99"
@@ -91,10 +93,11 @@ export default function ScoreModal({ match, onClose, onSuccess }: ScoreModalProp
 
           {/* Player 2 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="p2-score" className="block text-sm font-medium text-gray-700 mb-1">
               {match.player2?.display_name ?? 'Player 2'}
             </label>
             <input
+              id="p2-score"
               type="number"
               min="0"
               max="99"
@@ -123,7 +126,7 @@ export default function ScoreModal({ match, onClose, onSuccess }: ScoreModalProp
               disabled={loading}
               className="flex-1 px-4 py-2 bg-brand-700 text-white rounded-lg font-medium hover:bg-brand-600 disabled:opacity-50 transition-colors"
             >
-              {loading ? 'Saving…' : 'Save Score'}
+              {loading ? 'Saving…' : isEdit ? 'Save Changes' : 'Save Score'}
             </button>
           </div>
         </form>

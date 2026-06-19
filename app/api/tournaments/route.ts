@@ -19,10 +19,13 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, description, format, max_players, start_date, location } = body;
+    const { name, description, format, event_type, max_players, start_date, location } = body;
 
     if (!name || !format) {
       return NextResponse.json({ error: 'Name and format are required' }, { status: 400 });
+    }
+    if (event_type && event_type !== 'singles' && event_type !== 'doubles') {
+      return NextResponse.json({ error: 'Invalid event type' }, { status: 400 });
     }
 
     const { data, error } = await supabase
@@ -31,6 +34,7 @@ export async function POST(request: NextRequest) {
         name,
         description: description || null,
         format,
+        event_type: event_type === 'doubles' ? 'doubles' : 'singles',
         max_players: max_players || 16,
         start_date: start_date || null,
         location: location || null,

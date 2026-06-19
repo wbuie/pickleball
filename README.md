@@ -4,14 +4,16 @@ A pickleball tournament hosting web app for **Christ Fellowship Church, Birmingh
 
 ## Features
 
+- **Singles & Doubles** — Each tournament is a singles or doubles event. Doubles entries are two-player teams: a player can pick their partner when registering, or an organizer can pair players on the admin panel. Teams are seeded by their average skill
 - **Player Registration** — Players create accounts and set their skill level by either picking a plain-language description ("Brand new", "Recreational", "Advanced", …) or entering a DUPR rating (2.0–5.0) if they know it
 - **Tournament Management** — Admins create tournaments with format, date, location, and capacity
 - **Single Elimination** — Standard knockout bracket with proper seeding and byes
 - **Double Elimination** — Full WB/LB/Grand Finals structure with reset match support
 - **Auto-Seeding** — Seeded automatically by skill level; admins can override
-- **Live Scoring** — Admins enter scores; winners advance automatically through the bracket
+- **Live Scoring** — Admins enter scores; winners advance automatically through the bracket, and the bracket updates in real time for spectators (Supabase Realtime) without refreshing
+- **Editable Results** — Admins can correct a completed match; if the result hasn't already cascaded into a played match, the change re-propagates automatically
 - **Visual Brackets** — Clean horizontal bracket visualization for both formats
-- **Role-Based Access** — Admin vs player permissions enforced via Supabase RLS
+- **Role-Based Access** — Admin vs player permissions enforced via Supabase RLS (the admin panel is also guarded server-side)
 
 ## Tech Stack
 
@@ -43,7 +45,12 @@ npm install
 ### 2. Create a Supabase Project
 
 1. Go to [supabase.com](https://supabase.com) and create a project
-2. In the **SQL Editor**, run the full contents of `supabase/migrations/001_initial_schema.sql`
+2. In the **SQL Editor**, run each file in `supabase/migrations/` in order:
+   - `001_initial_schema.sql` — tables, RLS, and triggers
+   - `002_promote_admin.sql` — promote a specific email to admin (edit the address first)
+   - `003_email_optional_and_managed_players.sql` — admin email-optional toggle + roster-only (managed) players
+   - `004_doubles.sql` — doubles support (event type, team partner, entry-based matches). Regenerate any pre-existing brackets after applying it
+   - `005_signup_skill_and_realtime.sql` — capture skill level (and email) at signup + enable realtime brackets
 
 ### 3. Configure Environment Variables
 
@@ -71,6 +78,14 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000)
+
+### 6. Run Tests
+
+The bracket math (seeding, generation, scoring/advancement) is covered by unit tests:
+
+```bash
+npm test
+```
 
 ---
 

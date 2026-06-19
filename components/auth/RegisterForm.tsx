@@ -17,6 +17,8 @@ export default function RegisterForm() {
   const [error, setError] = useState('');
   // Whether an email is required is controlled by the admin (app_settings).
   const [requireEmail, setRequireEmail] = useState(true);
+  // Set once an email-backed signup needs the user to confirm via email.
+  const [confirmEmail, setConfirmEmail] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -62,10 +64,14 @@ export default function RegisterForm() {
 
     const supabase = createClient();
 
+    // Pass name + skill into user metadata so the `handle_new_user` DB trigger
+    // can seed the profile correctly. (We can't update the profile from the
+    // client here: when email confirmation is on there's no session yet, so an
+    // RLS-protected update would silently fail.)
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { display_name: displayName } },
+      options: { data: { display_name: displayName, skill_level: parseFloat(skillLevel) } },
     });
 
     if (signUpError) {
@@ -74,16 +80,37 @@ export default function RegisterForm() {
       return;
     }
 
-    if (data.user) {
-      await supabase
-        .from('profiles')
-        .update({ skill_level: parseFloat(skillLevel), display_name: displayName })
-        .eq('id', data.user.id);
+    // No session means Supabase is waiting on email confirmation.
+    if (!data.session) {
+      setConfirmEmail(true);
+      setLoading(false);
+      return;
     }
 
     router.push('/tournaments');
     router.refresh();
   };
+
+  if (confirmEmail) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="w-full max-w-md text-center">
+          <span className="text-5xl">📧</span>
+          <h1 className="text-2xl font-bold text-brand-900 mt-3">Check your email</h1>
+          <p className="text-gray-600 mt-2">
+            We sent a confirmation link to <span className="font-medium">{email}</span>. Click it to
+            activate your account, then sign in.
+          </p>
+          <Link
+            href="/auth/login"
+            className="inline-block mt-6 bg-brand-700 hover:bg-brand-600 text-white font-medium px-6 py-2.5 rounded-lg transition-colors"
+          >
+            Go to sign in
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
@@ -100,9 +127,11 @@ export default function RegisterForm() {
         <div className="bg-white rounded-2xl shadow-sm border border-brand-100 p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Your Name</label>
+              <label htmlFor="reg-name" className="block text-sm font-medium text-gray-700 mb-1">Your Name</label>
               <input
+                id="reg-name"
                 type="text"
+                autoComplete="name"
                 value={displayName}
                 onChange={e => setDisplayName(e.target.value)}
                 placeholder="Jane Smith"
@@ -112,11 +141,13 @@ export default function RegisterForm() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="reg-email" className="block text-sm font-medium text-gray-700 mb-1">
                 Email{!requireEmail && <span className="text-gray-400 font-normal"> (optional)</span>}
               </label>
               <input
+                id="reg-email"
                 type="email"
+                autoComplete="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 placeholder="you@example.com"
@@ -133,9 +164,11 @@ export default function RegisterForm() {
             {/* Password is only needed when registering with an email (login account). */}
             {(requireEmail || email.trim() !== '') && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <label htmlFor="reg-password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
                 <input
+                  id="reg-password"
                   type="password"
+                  autoComplete="new-password"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder="Min. 6 characters"
