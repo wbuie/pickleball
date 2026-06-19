@@ -24,7 +24,12 @@ export default function Navigation({ user }: NavigationProps) {
 
   const navLinks = [
     { href: '/tournaments', label: 'Tournaments' },
-    ...(user?.is_admin ? [{ href: '/tournaments/new', label: 'Create Tournament' }] : []),
+    ...(user?.is_admin
+      ? [
+          { href: '/tournaments/new', label: 'Create Tournament' },
+          { href: '/admin', label: 'Admin' },
+        ]
+      : []),
   ];
 
   return (
