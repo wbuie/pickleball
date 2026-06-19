@@ -41,6 +41,15 @@ export async function POST(
       return NextResponse.json({ error: 'Bracket already generated' }, { status: 400 });
     }
 
+    // Clear any stale matches before building. A generation attempt that was
+    // interrupted partway (timeout, dropped connection) can leave orphan match
+    // rows behind while the tournament is still in registration/seeding — which
+    // both looks broken ("Registration Open" with a bracket showing) and makes a
+    // retry collide with the (tournament, bracket_type, round, position) unique
+    // constraint. The bracket isn't live yet here, so wiping it is always safe
+    // and makes regenerating reliably recover the tournament.
+    await supabase.from('matches').delete().eq('tournament_id', id);
+
     // Get registered entries (an entry is one player in singles, a team in
     // doubles) with each side's skill for seeding.
     const { data: registrations } = await supabase
