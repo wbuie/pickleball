@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient, createClient } from '@/lib/supabase/server';
 import { generateSingleEliminationBracket } from '@/lib/bracket/singleElimination';
 import { generateDoubleEliminationBracket } from '@/lib/bracket/doubleElimination';
+import { isRosterEvent } from '@/lib/types/app';
 
 export async function POST(
   request: NextRequest,
@@ -50,11 +51,11 @@ export async function POST(
     // and makes regenerating reliably recover the tournament.
     await supabase.from('matches').delete().eq('tournament_id', id);
 
-    // Get registered entries (an entry is one player in singles, a team in
-    // doubles) with each side's skill for seeding.
+    // Get registered entries (an entry is one player in singles, a team
+    // otherwise) with each roster member's skill for seeding.
     const { data: registrations } = await supabase
       .from('tournament_registrations')
-      .select('id, player_id, partner_id, seed, profiles:player_id(skill_level), partner:partner_id(skill_level)')
+      .select('id, player_id, partner_id, team_name, seed, profiles:player_id(skill_level), partner:partner_id(skill_level), members:registration_members(profiles:player_id(skill_level))')
       .eq('tournament_id', id)
       .order('seed', { ascending: true, nullsFirst: false });
 
@@ -77,11 +78,29 @@ export async function POST(
       }
     }
 
-    // Team skill = average of both partners' ratings (just the player in singles).
+    // Roster events (basketball): every entry must be a named team.
+    if (isRosterEvent(tournament.event_type)) {
+      const unnamed = registrations.filter(r => !r.team_name || !r.team_name.trim()).length;
+      if (unnamed > 0) {
+        return NextResponse.json(
+          { error: `${unnamed} ${unnamed === 1 ? 'team needs' : 'teams need'} a name before generating the bracket` },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Seed skill = average rating across everyone on the entry's roster
+    // (captain, any partner, and any roster members). Missing ratings → 3.0.
     const skillOf = (r: (typeof registrations)[number]): number => {
-      const cap = (r.profiles as unknown as { skill_level: number | null } | null)?.skill_level ?? 3.0;
+      const ratings: number[] = [
+        (r.profiles as unknown as { skill_level: number | null } | null)?.skill_level ?? 3.0,
+      ];
       const par = (r.partner as unknown as { skill_level: number | null } | null)?.skill_level;
-      return r.partner_id ? (cap + (par ?? 3.0)) / 2 : cap;
+      if (r.partner_id) ratings.push(par ?? 3.0);
+      (r.members as unknown as { profiles: { skill_level: number | null } | null }[] | null)?.forEach(m => {
+        ratings.push(m.profiles?.skill_level ?? 3.0);
+      });
+      return ratings.reduce((sum, v) => sum + v, 0) / ratings.length;
     };
 
     // Assign seeds if not already set (by skill, descending).

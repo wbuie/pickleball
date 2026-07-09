@@ -25,6 +25,7 @@ export async function POST(
 
     const body = await request.json();
     const playerId = (body.player_id ?? '').trim();
+    const teamName = (body.team_name ?? '').trim() || null;
     if (!playerId) {
       return NextResponse.json({ error: 'player_id is required' }, { status: 400 });
     }
@@ -51,7 +52,7 @@ export async function POST(
 
     const { data, error } = await supabase
       .from('tournament_registrations')
-      .insert({ tournament_id: id, player_id: playerId })
+      .insert({ tournament_id: id, player_id: playerId, team_name: teamName })
       .select()
       .single();
 

@@ -32,7 +32,7 @@ export default async function AdminPage({
 
   const { data: registrations } = await supabase
     .from('tournament_registrations')
-    .select('*, profiles:player_id(*), partner:partner_id(*)')
+    .select('*, profiles:player_id(*), partner:partner_id(*), members:registration_members(*, profiles:player_id(*))')
     .eq('tournament_id', id)
     .order('seed', { ascending: true, nullsFirst: false });
 

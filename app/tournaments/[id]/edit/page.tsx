@@ -45,6 +45,7 @@ export default async function EditTournamentPage({
       initial={{
         name: tournament.name,
         description: tournament.description,
+        sport: tournament.sport,
         format: tournament.format,
         event_type: tournament.event_type,
         max_players: tournament.max_players,

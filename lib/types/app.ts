@@ -1,6 +1,10 @@
 export type SkillLevel = 2.0 | 2.5 | 3.0 | 3.5 | 4.0 | 4.5 | 5.0;
 export type TournamentFormat = 'single_elimination' | 'double_elimination';
-export type EventType = 'singles' | 'doubles';
+export type Sport = 'pickleball' | 'basketball';
+// An event describes how many players make up one entry. Pickleball runs
+// singles/doubles; basketball runs fixed-size teams (3v3, 4v4, 5v5). More
+// sports/events can be added by extending Sport, EventType, and the tables below.
+export type EventType = 'singles' | 'doubles' | '3v3' | '4v4' | '5v5';
 export type TournamentStatus = 'registration' | 'seeding' | 'active' | 'completed';
 export type MatchStatus = 'pending' | 'bye' | 'in_progress' | 'completed';
 export type BracketType = 'winners' | 'losers' | 'grand_finals';
@@ -25,6 +29,7 @@ export interface Tournament {
   id: string;
   name: string;
   description: string | null;
+  sport: Sport;
   format: TournamentFormat;
   event_type: EventType;
   status: TournamentStatus;
@@ -36,15 +41,28 @@ export interface Tournament {
   updated_at: string;
 }
 
+// A team-roster member beyond the captain. Used for basketball entries
+// (3v3/4v4/5v5); the captain is the registration's player_id, everyone else
+// is a row here.
+export interface RegistrationMember {
+  id: string;
+  registration_id: string;
+  player_id: string;
+  created_at: string;
+  profiles?: Profile | null;
+}
+
 export interface TournamentRegistration {
   id: string;
   tournament_id: string;
   player_id: string;
   partner_id: string | null;
+  team_name: string | null;
   seed: number | null;
   registered_at: string;
   profiles?: Profile;
   partner?: Profile | null;
+  members?: RegistrationMember[];
 }
 
 // A bracket "slot" — the entity that plays a match. In singles this is one
@@ -154,26 +172,92 @@ export const FORMAT_LABELS: Record<TournamentFormat, string> = {
   double_elimination: 'Double Elimination',
 };
 
+export const SPORT_LABELS: Record<Sport, string> = {
+  pickleball: 'Pickleball',
+  basketball: 'Basketball',
+};
+
 export const EVENT_LABELS: Record<EventType, string> = {
   singles: 'Singles',
   doubles: 'Doubles',
+  '3v3': '3v3',
+  '4v4': '4v4',
+  '5v5': '5v5',
 };
 
-// Display name for an entry: the captain alone (singles), or both partners
-// joined with a slash (doubles).
-export function entryName(reg: Pick<TournamentRegistration, 'profiles' | 'partner'>): string {
+// Which events belong to each sport. Drives the create/edit form and validation.
+export const SPORT_EVENT_TYPES: Record<Sport, EventType[]> = {
+  pickleball: ['singles', 'doubles'],
+  basketball: ['3v3', '4v4', '5v5'],
+};
+
+// How many players make up one entry for a given event.
+export const TEAM_SIZE: Record<EventType, number> = {
+  singles: 1,
+  doubles: 2,
+  '3v3': 3,
+  '4v4': 4,
+  '5v5': 5,
+};
+
+export function isSport(value: unknown): value is Sport {
+  return value === 'pickleball' || value === 'basketball';
+}
+
+// True for events whose entries are named, multi-player teams managed through a
+// roster (basketball). Distinguished from doubles, which pairs two players via
+// partner_id rather than a named roster.
+export function isRosterEvent(eventType: EventType): boolean {
+  return eventType === '3v3' || eventType === '4v4' || eventType === '5v5';
+}
+
+// The noun for an entry in this event, e.g. "Players" (singles) or "Teams".
+export function entryNoun(eventType: EventType, plural = true): string {
+  const team = eventType !== 'singles';
+  const word = team ? 'Team' : 'Player';
+  return plural ? `${word}s` : word;
+}
+
+// True when an event's entries pair/group multiple players (doubles or roster).
+export function isTeamEvent(eventType: EventType): boolean {
+  return eventType !== 'singles';
+}
+
+// The subset of a registration these helpers read. Kept loose (all fields
+// optional) so callers can pass partial rows without the full shape.
+export type EntryLike = {
+  profiles?: Profile | null;
+  partner?: Profile | null;
+  team_name?: string | null;
+  members?: Pick<RegistrationMember, 'profiles'>[] | null;
+};
+
+// Display name for an entry: a named team wins if set (basketball); otherwise
+// the captain alone (singles) or both partners joined with a slash (doubles).
+export function entryName(reg: EntryLike): string {
+  if (reg.team_name && reg.team_name.trim()) return reg.team_name.trim();
   const captain = reg.profiles?.display_name ?? 'Unknown';
   const partner = reg.partner?.display_name;
   return partner ? `${captain} / ${partner}` : captain;
 }
 
-// Seeding value for an entry: the team's average skill in doubles, otherwise the
-// individual's. Missing ratings fall back to 3.0 (the default skill level).
-export function entrySkill(reg: Pick<TournamentRegistration, 'profiles' | 'partner'>): number {
-  const a = reg.profiles?.skill_level ?? 3.0;
-  if (reg.partner) {
-    const b = reg.partner.skill_level ?? 3.0;
-    return (a + b) / 2;
-  }
-  return a;
+// Every player on an entry's roster: the captain, then a doubles partner or any
+// basketball roster members.
+export function entryPlayers(reg: EntryLike): Profile[] {
+  const players: Profile[] = [];
+  if (reg.profiles) players.push(reg.profiles);
+  if (reg.partner) players.push(reg.partner);
+  (reg.members ?? []).forEach(m => {
+    if (m.profiles) players.push(m.profiles);
+  });
+  return players;
+}
+
+// Seeding value for an entry: the average skill across everyone on the roster,
+// otherwise the individual's. Missing ratings fall back to 3.0 (the default).
+export function entrySkill(reg: EntryLike): number {
+  const ratings: number[] = [reg.profiles?.skill_level ?? 3.0];
+  if (reg.partner) ratings.push(reg.partner.skill_level ?? 3.0);
+  (reg.members ?? []).forEach(m => ratings.push(m.profiles?.skill_level ?? 3.0));
+  return ratings.reduce((sum, r) => sum + r, 0) / ratings.length;
 }

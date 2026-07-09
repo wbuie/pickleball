@@ -1,10 +1,12 @@
-# CFC Pickleball League 🏓
+# CFC League 🏓🏀
 
-A pickleball tournament hosting web app for **Christ Fellowship Church, Birmingham**. Built with Next.js, Supabase, and Tailwind CSS.
+A tournament hosting web app for **Christ Fellowship Church, Birmingham**. Built with Next.js, Supabase, and Tailwind CSS.
 
 ## Features
 
-- **Singles & Doubles** — Each tournament is a singles or doubles event. Doubles entries are two-player teams: a player can pick their partner when registering, or an organizer can pair players on the admin panel. Teams are seeded by their average skill
+- **Multiple Sports** — Each tournament picks a sport and an event. **Pickleball** runs singles and doubles; **basketball** runs 3v3, 4v4, and 5v5. The bracket engine is sport-agnostic (it works on entries), so adding another sport/event is a matter of extending the `Sport`/`EventType` tables in `lib/types/app.ts`
+- **Singles & Doubles (pickleball)** — Doubles entries are two-player teams: a player can pick their partner when registering, or an organizer can pair players on the admin panel. Teams are seeded by their average skill
+- **Team events (basketball)** — 3v3/4v4/5v5 entries are named teams with a captain and a roster. A captain names the team and picks teammates when registering, or an organizer creates teams and fills rosters on the admin panel. Teams are seeded by their roster's average skill
 - **Player Registration** — Players create accounts and set their skill level by either picking a plain-language description ("Brand new", "Recreational", "Advanced", …) or entering a DUPR rating (2.0–5.0) if they know it
 - **Tournament Management** — Admins create tournaments with format, date, location, and capacity
 - **Single Elimination** — Standard knockout bracket with proper seeding and byes
@@ -51,6 +53,7 @@ npm install
    - `003_email_optional_and_managed_players.sql` — admin email-optional toggle + roster-only (managed) players
    - `004_doubles.sql` — doubles support (event type, team partner, entry-based matches). Regenerate any pre-existing brackets after applying it
    - `005_signup_skill_and_realtime.sql` — capture skill level (and email) at signup + enable realtime brackets
+   - `006_basketball.sql` — multi-sport support: `sport` column, 3v3/4v4/5v5 event types, team names, and team rosters (`registration_members`)
 
 ### 3. Configure Environment Variables
 

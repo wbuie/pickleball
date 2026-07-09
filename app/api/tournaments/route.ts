@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { SPORT_EVENT_TYPES, isSport } from '@/lib/types/app';
+import type { Sport, EventType } from '@/lib/types/app';
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,13 +21,24 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, description, format, event_type, max_players, start_date, location } = body;
+    const { name, description, sport, format, event_type, max_players, start_date, location } = body;
 
     if (!name || !format) {
       return NextResponse.json({ error: 'Name and format are required' }, { status: 400 });
     }
-    if (event_type && event_type !== 'singles' && event_type !== 'doubles') {
-      return NextResponse.json({ error: 'Invalid event type' }, { status: 400 });
+
+    // Default to pickleball for backwards compatibility with older clients.
+    const chosenSport: Sport = isSport(sport) ? sport : 'pickleball';
+    const allowedEvents = SPORT_EVENT_TYPES[chosenSport];
+    const chosenEvent: EventType = allowedEvents.includes(event_type)
+      ? (event_type as EventType)
+      : allowedEvents[0];
+
+    if (event_type && !allowedEvents.includes(event_type)) {
+      return NextResponse.json(
+        { error: `Invalid event type for ${chosenSport}` },
+        { status: 400 }
+      );
     }
 
     const { data, error } = await supabase
@@ -33,8 +46,9 @@ export async function POST(request: NextRequest) {
       .insert({
         name,
         description: description || null,
+        sport: chosenSport,
         format,
-        event_type: event_type === 'doubles' ? 'doubles' : 'singles',
+        event_type: chosenEvent,
         max_players: max_players || 16,
         start_date: start_date || null,
         location: location || null,

@@ -2,17 +2,28 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import type { EventType, TournamentFormat } from '@/lib/types/app';
+import type { EventType, Sport, TournamentFormat } from '@/lib/types/app';
+import { SPORT_EVENT_TYPES, SPORT_LABELS, EVENT_LABELS } from '@/lib/types/app';
 
 export interface TournamentFormValues {
   name: string;
   description: string | null;
+  sport: Sport;
   format: TournamentFormat;
   event_type: EventType;
   max_players: number;
   start_date: string | null;
   location: string | null;
 }
+
+// Human hint for what one entry is in each event.
+const EVENT_HINTS: Record<EventType, string> = {
+  singles: 'one player per entry',
+  doubles: 'two-player teams',
+  '3v3': 'three-player teams',
+  '4v4': 'four-player teams',
+  '5v5': 'five-player teams',
+};
 
 interface TournamentFormProps {
   mode: 'create' | 'edit';
@@ -37,6 +48,21 @@ export default function TournamentForm({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [sport, setSport] = useState<Sport>(initial?.sport ?? 'pickleball');
+  const eventOptions = SPORT_EVENT_TYPES[sport];
+  // Keep the event valid for the selected sport (default to that sport's first).
+  const [eventType, setEventType] = useState<EventType>(
+    initial?.event_type && SPORT_EVENT_TYPES[initial?.sport ?? 'pickleball'].includes(initial.event_type)
+      ? initial.event_type
+      : SPORT_EVENT_TYPES[initial?.sport ?? 'pickleball'][0]
+  );
+
+  const handleSportChange = (next: Sport) => {
+    setSport(next);
+    if (!SPORT_EVENT_TYPES[next].includes(eventType)) {
+      setEventType(SPORT_EVENT_TYPES[next][0]);
+    }
+  };
 
   const isEdit = mode === 'edit';
   const maxOptions = initial?.max_players && !MAX_OPTIONS.includes(initial.max_players)
@@ -52,6 +78,7 @@ export default function TournamentForm({
     const data = {
       name: form.get('name'),
       description: form.get('description'),
+      sport: form.get('sport'),
       format: form.get('format'),
       event_type: form.get('event_type'),
       max_players: parseInt(form.get('max_players') as string),
@@ -126,26 +153,49 @@ export default function TournamentForm({
 
           {structuralLocked && (
             <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-              The bracket has been generated, so the event, format, and size are locked. You can still
-              update the name, description, date, and location.
+              The bracket has been generated, so the sport, event, format, and size are locked. You can
+              still update the name, description, date, and location.
             </p>
           )}
 
-          <div>
-            <label htmlFor="t-event-type" className="block text-sm font-medium text-gray-700 mb-1">
-              Event <span className="text-red-500">*</span>
-            </label>
-            <select
-              id="t-event-type"
-              name="event_type"
-              required
-              disabled={structuralLocked}
-              defaultValue={initial?.event_type ?? 'singles'}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-white disabled:bg-gray-50 disabled:text-gray-400"
-            >
-              <option value="singles">Singles (one player per entry)</option>
-              <option value="doubles">Doubles (two-player teams)</option>
-            </select>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="t-sport" className="block text-sm font-medium text-gray-700 mb-1">
+                Sport <span className="text-red-500">*</span>
+              </label>
+              <select
+                id="t-sport"
+                name="sport"
+                required
+                disabled={structuralLocked}
+                value={sport}
+                onChange={e => handleSportChange(e.target.value as Sport)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-white disabled:bg-gray-50 disabled:text-gray-400"
+              >
+                {(Object.keys(SPORT_LABELS) as Sport[]).map(s => (
+                  <option key={s} value={s}>{SPORT_LABELS[s]}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="t-event-type" className="block text-sm font-medium text-gray-700 mb-1">
+                Event <span className="text-red-500">*</span>
+              </label>
+              <select
+                id="t-event-type"
+                name="event_type"
+                required
+                disabled={structuralLocked}
+                value={eventType}
+                onChange={e => setEventType(e.target.value as EventType)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-white disabled:bg-gray-50 disabled:text-gray-400"
+              >
+                {eventOptions.map(ev => (
+                  <option key={ev} value={ev}>{EVENT_LABELS[ev]} ({EVENT_HINTS[ev]})</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
