@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import TournamentCard from '@/components/tournaments/TournamentCard';
-import PickleballMark from '@/components/PickleballMark';
+import BrandMark from '@/components/BrandMark';
 import type { TournamentWithCounts } from '@/lib/types/app';
 
 export default async function HomePage() {
@@ -26,12 +26,12 @@ export default async function HomePage() {
       {/* Hero */}
       <div className="bg-gradient-to-br from-brand-800 to-brand-900 text-white">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-20 text-center">
-          <PickleballMark className="w-20 h-20 mx-auto mb-4 text-accent-400" />
+          <BrandMark className="w-20 h-20 mx-auto mb-4 text-accent-400" />
           <p className="text-accent-400 font-semibold tracking-wide uppercase text-sm mb-2">
             Christ Fellowship Church · Birmingham
           </p>
           <h1 className="text-4xl sm:text-5xl font-extrabold mb-4 tracking-tight">
-            CFC Pickleball League
+            CFC Sports Tournaments
           </h1>
           <p className="text-brand-200 text-xl mb-8 max-w-xl mx-auto">
             Come play, compete, and connect. Tournaments for every skill level —

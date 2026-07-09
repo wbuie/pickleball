@@ -118,7 +118,7 @@ export default function TournamentForm({
           {isEdit ? 'Edit Tournament' : 'Create Tournament'}
         </h1>
         <p className="text-gray-500 mt-1">
-          {isEdit ? 'Update the details for this tournament' : 'Set up a new pickleball tournament'}
+          {isEdit ? 'Update the details for this tournament' : 'Set up a new tournament'}
         </p>
       </div>
 
