@@ -4,9 +4,9 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import BracketViewer from '@/components/bracket/BracketViewer';
 import RegisterButton from '@/components/tournaments/RegisterButton';
-import { StatusBadge, SkillBadge } from '@/components/ui/Badge';
+import { StatusBadge, SkillBadge, BasketballBadge } from '@/components/ui/Badge';
 import { FORMAT_LABELS, STATUS_LABELS, EVENT_LABELS, SPORT_LABELS, entryName, entrySkill, entryPlayers, entryNoun as entryNounFor, isRosterEvent, isTeamEvent } from '@/lib/types/app';
-import type { Match, Profile, BracketEntry, TournamentRegistration, EventType } from '@/lib/types/app';
+import type { Match, Profile, BracketEntry, TournamentRegistration, EventType, Sport } from '@/lib/types/app';
 
 export async function generateMetadata({
   params,
@@ -77,6 +77,7 @@ export default async function TournamentPage({
   const isRoster = isRosterEvent(tournament.event_type as EventType);
   const isTeam = isTeamEvent(tournament.event_type as EventType);
   const entryNoun = entryNounFor(tournament.event_type as EventType);
+  const sport = tournament.sport as Sport;
 
   const isRegistered = user
     ? registrations.some(
@@ -240,7 +241,9 @@ export default async function TournamentPage({
                       {youAreHere && <span className="ml-1 text-brand-600 text-xs">(you)</span>}
                       {unpaired && <span className="ml-1 text-amber-600 text-xs">· needs partner</span>}
                     </span>
-                    <SkillBadge level={entrySkill(reg)} />
+                    {sport === 'basketball'
+                      ? <BasketballBadge level={entrySkill(reg, sport)} />
+                      : <SkillBadge level={entrySkill(reg, sport)} />}
                   </div>
                   {roster.length > 0 && (
                     <p className="ml-7 mt-0.5 text-xs text-gray-500 truncate">

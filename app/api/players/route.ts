@@ -29,11 +29,16 @@ export async function POST(request: NextRequest) {
     if (Number.isNaN(skill)) skill = 3.0;
     skill = Math.round(Math.min(5.0, Math.max(2.0, skill)) * 2) / 2;
 
+    // Optional basketball rating (1–5 tiers); left Unrated if absent/invalid.
+    let basketball: number | null = parseFloat(body.basketball_skill_level);
+    basketball = Number.isNaN(basketball) ? null : Math.round(Math.min(5, Math.max(1, basketball)));
+
     const { data, error } = await supabase
       .from('profiles')
       .insert({
         display_name: name,
         skill_level: skill,
+        basketball_skill_level: basketball,
         email: (body.email ?? '').trim() || null,
         is_managed: true,
       })

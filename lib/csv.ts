@@ -58,6 +58,7 @@ export function parseCsv(text: string): string[][] {
 export interface ParsedPlayer {
   display_name: string;
   skill_level: number;
+  basketball_skill_level: number | null;
   email: string | null;
 }
 
@@ -72,6 +73,10 @@ const HEADER_ALIASES: Record<string, string> = {
   dupr: 'skill',
   email: 'email',
   'email address': 'email',
+  basketball: 'basketball',
+  'basketball skill': 'basketball',
+  'basketball rating': 'basketball',
+  bball: 'basketball',
 };
 
 function normalizeSkill(raw: string | undefined): number {
@@ -80,6 +85,15 @@ function normalizeSkill(raw: string | undefined): number {
   // Clamp to the 2.0–5.0 range the schema allows, rounded to nearest 0.5.
   const clamped = Math.min(5.0, Math.max(2.0, n));
   return Math.round(clamped * 2) / 2;
+}
+
+// Basketball uses a 1–5 tier scale; blank/invalid stays null ("Unrated").
+function normalizeBasketball(raw: string | undefined): number | null {
+  const trimmed = (raw ?? '').trim();
+  if (trimmed === '') return null;
+  const n = parseFloat(trimmed);
+  if (Number.isNaN(n)) return null;
+  return Math.round(Math.min(5, Math.max(1, n)));
 }
 
 export interface ImportResult {
@@ -101,6 +115,7 @@ export function csvToPlayers(text: string): ImportResult {
   const nameIdx = header.indexOf('name');
   const skillIdx = header.indexOf('skill');
   const emailIdx = header.indexOf('email');
+  const bballIdx = header.indexOf('basketball');
 
   if (nameIdx === -1) {
     return {
@@ -121,6 +136,7 @@ export function csvToPlayers(text: string): ImportResult {
     players.push({
       display_name: name,
       skill_level: normalizeSkill(skillIdx === -1 ? undefined : cells[skillIdx]),
+      basketball_skill_level: normalizeBasketball(bballIdx === -1 ? undefined : cells[bballIdx]),
       email,
     });
   }

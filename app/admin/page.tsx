@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import AdminDashboard from '@/components/admin/AdminDashboard';
-import type { AppSettings, Profile } from '@/lib/types/app';
+import type { AdminEmail, AppSettings, Profile } from '@/lib/types/app';
 
 export default async function AdminPage() {
   const supabase = await createClient();
@@ -28,10 +28,17 @@ export default async function AdminPage() {
     .select('*')
     .order('display_name', { ascending: true });
 
+  const { data: adminEmails } = await supabase
+    .from('admin_emails')
+    .select('*')
+    .order('created_at', { ascending: true });
+
   return (
     <AdminDashboard
       settings={(settings as AppSettings) ?? { id: 1, require_email: true, updated_at: '' }}
       players={(players as Profile[]) ?? []}
+      adminEmails={(adminEmails as AdminEmail[]) ?? []}
+      currentUserEmail={user.email ?? null}
       currentUserId={user.id}
     />
   );

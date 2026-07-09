@@ -13,6 +13,7 @@ export interface Profile {
   id: string;
   display_name: string;
   skill_level: number | null;
+  basketball_skill_level: number | null;
   is_admin: boolean;
   is_managed: boolean;
   email: string | null;
@@ -23,6 +24,14 @@ export interface AppSettings {
   id: number;
   require_email: boolean;
   updated_at: string;
+}
+
+// An email on the admin allowlist. Grants admin to a matching profile now (and
+// on signup for emails that haven't registered yet).
+export interface AdminEmail {
+  email: string;
+  added_by: string | null;
+  created_at: string;
 }
 
 export interface Tournament {
@@ -160,6 +169,35 @@ export const SKILL_DESCRIPTIONS: {
   },
 ];
 
+// Basketball rating tiers. Unlike pickleball's DUPR (2.0–5.0), basketball uses
+// a 1–5 tier scale (Beginner → Elite); the numeric value drives seeding.
+export const BASKETBALL_SKILL_LEVELS: { value: string; label: string }[] = [
+  { value: '1', label: 'Beginner' },
+  { value: '2', label: 'Recreational' },
+  { value: '3', label: 'Intermediate' },
+  { value: '4', label: 'Competitive' },
+  { value: '5', label: 'Elite' },
+];
+
+export const BASKETBALL_SKILL_DESCRIPTIONS: {
+  value: string;
+  title: string;
+  description: string;
+}[] = [
+  { value: '1', title: 'Beginner', description: 'New to organized play — still learning the game.' },
+  { value: '2', title: 'Recreational', description: 'Play casually for fun; comfortable in a pickup game.' },
+  { value: '3', title: 'Intermediate', description: 'Solid fundamentals and understand team play.' },
+  { value: '4', title: 'Competitive', description: 'Play in leagues with strong skills and IQ.' },
+  { value: '5', title: 'Elite', description: 'Top-tier, highly competitive player.' },
+];
+
+// The tier label nearest a stored/averaged basketball rating (for display).
+export function basketballTierLabel(level: number | null): string {
+  if (level === null || Number.isNaN(level)) return 'Unrated';
+  const rounded = Math.min(5, Math.max(1, Math.round(level)));
+  return BASKETBALL_SKILL_LEVELS[rounded - 1]?.label ?? String(level);
+}
+
 export const STATUS_LABELS: Record<TournamentStatus, string> = {
   registration: 'Registration Open',
   seeding: 'Seeding',
@@ -253,11 +291,16 @@ export function entryPlayers(reg: EntryLike): Profile[] {
   return players;
 }
 
-// Seeding value for an entry: the average skill across everyone on the roster,
-// otherwise the individual's. Missing ratings fall back to 3.0 (the default).
-export function entrySkill(reg: EntryLike): number {
-  const ratings: number[] = [reg.profiles?.skill_level ?? 3.0];
-  if (reg.partner) ratings.push(reg.partner.skill_level ?? 3.0);
-  (reg.members ?? []).forEach(m => ratings.push(m.profiles?.skill_level ?? 3.0));
+// Seeding value for an entry: the average rating across everyone on the roster,
+// otherwise the individual's. Basketball reads each player's basketball rating;
+// every other sport reads the pickleball (DUPR) skill. Missing ratings fall back
+// to 3.0 (the mid-scale default for both).
+export function entrySkill(reg: EntryLike, sport: Sport = 'pickleball'): number {
+  const ratingOf = (p: Pick<Profile, 'skill_level' | 'basketball_skill_level'> | null | undefined) =>
+    (sport === 'basketball' ? p?.basketball_skill_level : p?.skill_level) ?? 3.0;
+
+  const ratings: number[] = [ratingOf(reg.profiles)];
+  if (reg.partner) ratings.push(ratingOf(reg.partner));
+  (reg.members ?? []).forEach(m => ratings.push(ratingOf(m.profiles)));
   return ratings.reduce((sum, r) => sum + r, 0) / ratings.length;
 }

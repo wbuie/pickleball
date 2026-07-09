@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { SkillBadge } from '@/components/ui/Badge';
+import { SkillBadge, BasketballBadge } from '@/components/ui/Badge';
 import type { Tournament, TournamentRegistration } from '@/lib/types/app';
 import {
   FORMAT_LABELS,
@@ -38,6 +38,7 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
   const isRoster = isRosterEvent(tournament.event_type);
   const teamSize = TEAM_SIZE[tournament.event_type];
   const entryNoun = entryNounFor(tournament.event_type);
+  const sport = tournament.sport;
 
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
@@ -189,7 +190,7 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
   };
 
   const handleAutoSeed = () => {
-    const sorted = [...registrations].sort((a, b) => entrySkill(b) - entrySkill(a));
+    const sorted = [...registrations].sort((a, b) => entrySkill(b, sport) - entrySkill(a, sport));
     const newSeeds: Record<string, number> = {};
     sorted.forEach((r, i) => {
       newSeeds[r.id] = i + 1;
@@ -320,7 +321,9 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
                       </span>
                     )}
 
-                    <SkillBadge level={entrySkill(reg)} />
+                    {sport === 'basketball'
+                      ? <BasketballBadge level={entrySkill(reg, sport)} />
+                      : <SkillBadge level={entrySkill(reg, sport)} />}
 
                     {isDoubles && !isBracketGenerated && (
                       unpaired ? (

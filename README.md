@@ -11,6 +11,8 @@ A tournament hosting web app for **Christ Fellowship Church, Birmingham**. Built
 - **Tournament Management** — Admins create tournaments with format, date, location, and capacity
 - **Single Elimination** — Standard knockout bracket with proper seeding and byes
 - **Double Elimination** — Full WB/LB/Grand Finals structure with reset match support
+- **Per-sport ratings** — Players carry a pickleball DUPR rating (2.0–5.0) and a separate basketball tier (1–5). Brackets seed by the rating for that tournament's sport
+- **Admins by email** — Organizers grant admin access by email from the League Admin page; a matching account is promoted immediately, and unregistered emails are auto-granted admin when they sign up
 - **Auto-Seeding** — Seeded automatically by skill level; admins can override
 - **Live Scoring** — Admins enter scores; winners advance automatically through the bracket, and the bracket updates in real time for spectators (Supabase Realtime) without refreshing
 - **Editable Results** — Admins can correct a completed match; if the result hasn't already cascaded into a played match, the change re-propagates automatically
@@ -54,6 +56,8 @@ npm install
    - `004_doubles.sql` — doubles support (event type, team partner, entry-based matches). Regenerate any pre-existing brackets after applying it
    - `005_signup_skill_and_realtime.sql` — capture skill level (and email) at signup + enable realtime brackets
    - `006_basketball.sql` — multi-sport support: `sport` column, 3v3/4v4/5v5 event types, team names, and team rosters (`registration_members`)
+   - `007_admin_email_allowlist.sql` — `admin_emails` allowlist so organizers can grant admin by email (promotes existing accounts and auto-grants on signup)
+   - `008_basketball_rating.sql` — per-player `basketball_skill_level` (1–5 tiers) used to seed basketball tournaments
 
 ### 3. Configure Environment Variables
 
