@@ -7,23 +7,30 @@ import {
   isRosterEvent,
   isTeamEvent,
   isSport,
+  basketballTierLabel,
   TEAM_SIZE,
   SPORT_EVENT_TYPES,
+  BASKETBALL_SKILL_LEVELS,
 } from './app';
 import type { Profile } from './app';
 
-const mk = (display_name: string, skill_level: number | null): Profile => ({
+const mk = (
+  display_name: string,
+  skill_level: number | null,
+  basketball_skill_level: number | null = null
+): Profile => ({
   id: display_name,
   display_name,
   skill_level,
+  basketball_skill_level,
   is_admin: false,
   is_managed: false,
   email: null,
   created_at: '',
 });
 
-const member = (display_name: string, skill_level: number | null) => ({
-  profiles: mk(display_name, skill_level),
+const member = (display_name: string, skill_level: number | null, basketball_skill_level: number | null = null) => ({
+  profiles: mk(display_name, skill_level, basketball_skill_level),
 });
 
 describe('entryName', () => {
@@ -96,6 +103,47 @@ describe('entrySkill', () => {
     expect(entrySkill({ profiles: mk('Jane', null), partner: null })).toBe(3.0);
     expect(entrySkill({ profiles: mk('Jane', 4.0), partner: mk('Bob', null) })).toBe(3.5);
     expect(entrySkill({ profiles: mk('Jane', 4.0), members: [member('Bob', null)] })).toBe(3.5);
+  });
+
+  it('reads the basketball rating for basketball entries', () => {
+    // Pickleball skills 2.0 are ignored; basketball ratings 4 & 2 average to 3.
+    const reg = {
+      profiles: mk('Jane', 2.0, 4),
+      team_name: 'Ballers',
+      members: [member('Bob', 2.0, 2)],
+    };
+    expect(entrySkill(reg, 'basketball')).toBe(3);
+    expect(entrySkill(reg, 'pickleball')).toBe(2.0);
+  });
+
+  it('defaults missing basketball ratings to 3.0', () => {
+    expect(entrySkill({ profiles: mk('Jane', 5.0, null) }, 'basketball')).toBe(3.0);
+    expect(
+      entrySkill({ profiles: mk('Jane', 5.0, 5), members: [member('Bob', 5.0, null)] }, 'basketball')
+    ).toBe(4);
+  });
+});
+
+describe('basketballTierLabel', () => {
+  it('maps a stored tier to its label', () => {
+    expect(basketballTierLabel(1)).toBe('Beginner');
+    expect(basketballTierLabel(3)).toBe('Intermediate');
+    expect(basketballTierLabel(5)).toBe('Elite');
+  });
+
+  it('rounds a fractional average to the nearest tier', () => {
+    expect(basketballTierLabel(3.4)).toBe('Intermediate');
+    expect(basketballTierLabel(3.6)).toBe('Competitive');
+  });
+
+  it('clamps out-of-range values and handles null', () => {
+    expect(basketballTierLabel(null)).toBe('Unrated');
+    expect(basketballTierLabel(0)).toBe('Beginner');
+    expect(basketballTierLabel(9)).toBe('Elite');
+  });
+
+  it('exposes five tiers', () => {
+    expect(BASKETBALL_SKILL_LEVELS.map(l => l.value)).toEqual(['1', '2', '3', '4', '5']);
   });
 });
 

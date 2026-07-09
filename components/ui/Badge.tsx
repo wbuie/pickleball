@@ -1,4 +1,5 @@
 import type { TournamentStatus, MatchStatus } from '@/lib/types/app';
+import { basketballTierLabel } from '@/lib/types/app';
 
 interface BadgeProps {
   children: React.ReactNode;
@@ -35,6 +36,23 @@ export function SkillBadge({ level }: { level: number | null }) {
     level >= 3.0 ? 'blue' :
     'green';
   return <Badge variant={variant}>{level.toFixed(1)}</Badge>;
+}
+
+// Basketball rating on the 1–5 tier scale. Shows the numeric value with a
+// tier-appropriate color; `showLabel` adds the tier name (Beginner…Elite) for
+// per-player displays where the value is an exact tier.
+export function BasketballBadge({ level, showLabel = false }: { level: number | null; showLabel?: boolean }) {
+  if (!level) return <Badge variant="gray">Unrated</Badge>;
+  const variant =
+    level >= 4.5 ? 'red' :
+    level >= 3.5 ? 'orange' :
+    level >= 2.5 ? 'blue' :
+    'green';
+  return (
+    <Badge variant={variant}>
+      {showLabel ? basketballTierLabel(level) : level.toFixed(1)}
+    </Badge>
+  );
 }
 
 export function StatusBadge({ status }: { status: TournamentStatus }) {

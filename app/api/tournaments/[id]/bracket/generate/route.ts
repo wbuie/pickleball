@@ -52,10 +52,10 @@ export async function POST(
     await supabase.from('matches').delete().eq('tournament_id', id);
 
     // Get registered entries (an entry is one player in singles, a team
-    // otherwise) with each roster member's skill for seeding.
+    // otherwise) with each roster member's ratings for seeding.
     const { data: registrations } = await supabase
       .from('tournament_registrations')
-      .select('id, player_id, partner_id, team_name, seed, profiles:player_id(skill_level), partner:partner_id(skill_level), members:registration_members(profiles:player_id(skill_level))')
+      .select('id, player_id, partner_id, team_name, seed, profiles:player_id(skill_level, basketball_skill_level), partner:partner_id(skill_level, basketball_skill_level), members:registration_members(profiles:player_id(skill_level, basketball_skill_level))')
       .eq('tournament_id', id)
       .order('seed', { ascending: true, nullsFirst: false });
 
@@ -90,15 +90,18 @@ export async function POST(
     }
 
     // Seed skill = average rating across everyone on the entry's roster
-    // (captain, any partner, and any roster members). Missing ratings → 3.0.
+    // (captain, any partner, and any roster members). Basketball seeds by the
+    // basketball rating; every other sport by the pickleball (DUPR) skill.
+    // Missing ratings → 3.0.
+    type Rated = { skill_level: number | null; basketball_skill_level: number | null } | null;
+    const isBasketball = tournament.sport === 'basketball';
+    const ratingOf = (p: Rated): number =>
+      (isBasketball ? p?.basketball_skill_level : p?.skill_level) ?? 3.0;
     const skillOf = (r: (typeof registrations)[number]): number => {
-      const ratings: number[] = [
-        (r.profiles as unknown as { skill_level: number | null } | null)?.skill_level ?? 3.0,
-      ];
-      const par = (r.partner as unknown as { skill_level: number | null } | null)?.skill_level;
-      if (r.partner_id) ratings.push(par ?? 3.0);
-      (r.members as unknown as { profiles: { skill_level: number | null } | null }[] | null)?.forEach(m => {
-        ratings.push(m.profiles?.skill_level ?? 3.0);
+      const ratings: number[] = [ratingOf(r.profiles as unknown as Rated)];
+      if (r.partner_id) ratings.push(ratingOf(r.partner as unknown as Rated));
+      (r.members as unknown as { profiles: Rated }[] | null)?.forEach(m => {
+        ratings.push(ratingOf(m.profiles));
       });
       return ratings.reduce((sum, v) => sum + v, 0) / ratings.length;
     };

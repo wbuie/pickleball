@@ -38,6 +38,7 @@ export async function POST(request: NextRequest) {
     const rows = players.map(p => ({
       display_name: p.display_name,
       skill_level: p.skill_level,
+      basketball_skill_level: p.basketball_skill_level,
       email: p.email,
       is_managed: true,
     }));

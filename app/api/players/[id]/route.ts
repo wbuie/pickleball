@@ -26,10 +26,11 @@ export async function PATCH(
     const body = await request.json();
     const hasAdmin = 'is_admin' in body;
     const hasSkill = 'skill_level' in body;
+    const hasBball = 'basketball_skill_level' in body;
 
-    if (!hasAdmin && !hasSkill) {
+    if (!hasAdmin && !hasSkill && !hasBball) {
       return NextResponse.json(
-        { error: 'Nothing to update — provide is_admin and/or skill_level' },
+        { error: 'Nothing to update — provide is_admin, skill_level, and/or basketball_skill_level' },
         { status: 400 }
       );
     }
@@ -37,7 +38,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'is_admin must be a boolean' }, { status: 400 });
     }
 
-    const update: { is_admin?: boolean; skill_level?: number } = {};
+    const update: { is_admin?: boolean; skill_level?: number; basketball_skill_level?: number | null } = {};
 
     if (hasAdmin) {
       // Guard against self-lockout: an admin can't demote themselves.
@@ -57,6 +58,20 @@ export async function PATCH(
       }
       // Clamp to the supported range and snap to the 0.5 steps used elsewhere.
       update.skill_level = Math.round(Math.min(5.0, Math.max(2.0, skill)) * 2) / 2;
+    }
+
+    if (hasBball) {
+      // Null/empty clears the rating back to "Unrated".
+      if (body.basketball_skill_level === null || body.basketball_skill_level === '') {
+        update.basketball_skill_level = null;
+      } else {
+        const bball = parseFloat(body.basketball_skill_level);
+        if (Number.isNaN(bball)) {
+          return NextResponse.json({ error: 'Basketball rating must be a number between 1 and 5' }, { status: 400 });
+        }
+        // Clamp to the 1–5 tier scale and snap to whole tiers.
+        update.basketball_skill_level = Math.round(Math.min(5, Math.max(1, bball)));
+      }
     }
 
     const { data: target } = await supabase
