@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { TournamentWithCounts } from '@/lib/types/app';
 import { StatusBadge } from '@/components/ui/Badge';
-import { FORMAT_LABELS, EVENT_LABELS } from '@/lib/types/app';
+import { FORMAT_LABELS, EVENT_LABELS, SPORT_LABELS, entryNoun } from '@/lib/types/app';
 
 interface TournamentCardProps {
   tournament: TournamentWithCounts;
@@ -27,7 +27,7 @@ export default function TournamentCard({ tournament }: TournamentCardProps) {
         <div className="space-y-2 text-sm">
           <div className="flex items-center gap-2 text-gray-600">
             <span>⚡</span>
-            <span>{EVENT_LABELS[tournament.event_type]} · {FORMAT_LABELS[tournament.format]}</span>
+            <span>{SPORT_LABELS[tournament.sport]} · {EVENT_LABELS[tournament.event_type]} · {FORMAT_LABELS[tournament.format]}</span>
           </div>
           {tournament.start_date && (
             <div className="flex items-center gap-2 text-gray-600">
@@ -45,7 +45,7 @@ export default function TournamentCard({ tournament }: TournamentCardProps) {
 
         <div className="mt-4 pt-4 border-t border-gray-100">
           <div className="flex items-center justify-between text-sm mb-1.5">
-            <span className="text-gray-600">{tournament.event_type === 'doubles' ? 'Teams' : 'Players'}</span>
+            <span className="text-gray-600">{entryNoun(tournament.event_type)}</span>
             <span className="font-medium text-gray-900">
               {tournament.registered_count} / {tournament.max_players}
             </span>

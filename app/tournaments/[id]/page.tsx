@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 import BracketViewer from '@/components/bracket/BracketViewer';
 import RegisterButton from '@/components/tournaments/RegisterButton';
 import { StatusBadge, SkillBadge } from '@/components/ui/Badge';
-import { FORMAT_LABELS, STATUS_LABELS, EVENT_LABELS, entryName, entrySkill } from '@/lib/types/app';
+import { FORMAT_LABELS, STATUS_LABELS, EVENT_LABELS, SPORT_LABELS, entryName, entrySkill, entryPlayers, entryNoun as entryNounFor, isRosterEvent, isTeamEvent } from '@/lib/types/app';
 import type { Match, Profile, BracketEntry, TournamentRegistration, EventType } from '@/lib/types/app';
 
 export async function generateMetadata({
@@ -61,7 +61,7 @@ export default async function TournamentPage({
 
   const { data: registrationsData } = await supabase
     .from('tournament_registrations')
-    .select('*, profiles:player_id(*), partner:partner_id(*)')
+    .select('*, profiles:player_id(*), partner:partner_id(*), members:registration_members(*, profiles:player_id(*))')
     .eq('tournament_id', id)
     .order('seed', { ascending: true, nullsFirst: false });
   const registrations = (registrationsData || []) as TournamentRegistration[];
@@ -74,10 +74,17 @@ export default async function TournamentPage({
     .order('position', { ascending: true });
 
   const isDoubles = tournament.event_type === 'doubles';
-  const entryNoun = isDoubles ? 'Teams' : 'Players';
+  const isRoster = isRosterEvent(tournament.event_type as EventType);
+  const isTeam = isTeamEvent(tournament.event_type as EventType);
+  const entryNoun = entryNounFor(tournament.event_type as EventType);
 
   const isRegistered = user
-    ? registrations.some(r => r.player_id === user.id || r.partner_id === user.id)
+    ? registrations.some(
+        r =>
+          r.player_id === user.id ||
+          r.partner_id === user.id ||
+          (r.members ?? []).some(m => m.player_id === user.id)
+      )
     : false;
 
   const isFull = registrations.length >= tournament.max_players;
@@ -89,13 +96,15 @@ export default async function TournamentPage({
     display_name: entryName(r),
   }));
 
-  // Eligible doubles partners: members not already on a team here (and not you).
+  // Eligible teammates: members not already on a team here (and not you). Used
+  // to pick a doubles partner or fill out a basketball roster.
   let eligiblePartners: { id: string; display_name: string }[] = [];
-  if (isDoubles && user && !isRegistered && tournament.status === 'registration') {
+  if (isTeam && user && !isRegistered && tournament.status === 'registration') {
     const taken = new Set<string>([user.id]);
     registrations.forEach(r => {
       taken.add(r.player_id);
       if (r.partner_id) taken.add(r.partner_id);
+      (r.members ?? []).forEach(m => taken.add(m.player_id));
     });
     const { data: members } = await supabase
       .from('profiles')
@@ -122,6 +131,8 @@ export default async function TournamentPage({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2">
               <StatusBadge status={tournament.status} />
+              <span className="text-gray-400 text-sm">·</span>
+              <span className="text-gray-500 text-sm">{SPORT_LABELS[tournament.sport as keyof typeof SPORT_LABELS]}</span>
               <span className="text-gray-400 text-sm">·</span>
               <span className="text-gray-500 text-sm">{EVENT_LABELS[tournament.event_type as EventType]}</span>
               <span className="text-gray-400 text-sm">·</span>
@@ -207,23 +218,35 @@ export default async function TournamentPage({
           <div className="space-y-2">
             {registrations.length === 0 && (
               <p className="text-gray-400 text-sm italic">
-                No {isDoubles ? 'teams' : 'players'} registered yet
+                No {isTeam ? 'teams' : 'players'} registered yet
               </p>
             )}
             {registrations.map((reg, i) => {
-              const youAreHere = reg.player_id === user?.id || reg.partner_id === user?.id;
+              const youAreHere =
+                reg.player_id === user?.id ||
+                reg.partner_id === user?.id ||
+                (reg.members ?? []).some(m => m.player_id === user?.id);
               const unpaired = isDoubles && !reg.partner_id;
+              // For a named roster team, list everyone underneath the team name.
+              const roster = isRoster ? entryPlayers(reg) : [];
               return (
-                <div key={reg.id} className="flex items-center gap-2 py-1.5 border-b border-gray-50 last:border-0">
-                  <span className="text-gray-400 text-xs w-5 text-right flex-shrink-0">
-                    {reg.seed ?? i + 1}
-                  </span>
-                  <span className="flex-1 text-sm font-medium text-gray-800 truncate">
-                    {entryName(reg)}
-                    {youAreHere && <span className="ml-1 text-brand-600 text-xs">(you)</span>}
-                    {unpaired && <span className="ml-1 text-amber-600 text-xs">· needs partner</span>}
-                  </span>
-                  <SkillBadge level={entrySkill(reg)} />
+                <div key={reg.id} className="py-1.5 border-b border-gray-50 last:border-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-400 text-xs w-5 text-right flex-shrink-0">
+                      {reg.seed ?? i + 1}
+                    </span>
+                    <span className="flex-1 text-sm font-medium text-gray-800 truncate">
+                      {entryName(reg)}
+                      {youAreHere && <span className="ml-1 text-brand-600 text-xs">(you)</span>}
+                      {unpaired && <span className="ml-1 text-amber-600 text-xs">· needs partner</span>}
+                    </span>
+                    <SkillBadge level={entrySkill(reg)} />
+                  </div>
+                  {roster.length > 0 && (
+                    <p className="ml-7 mt-0.5 text-xs text-gray-500 truncate">
+                      {roster.map(p => p.display_name).join(', ')}
+                    </p>
+                  )}
                 </div>
               );
             })}
