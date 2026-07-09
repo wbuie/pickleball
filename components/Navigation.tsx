@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import PickleballMark from '@/components/PickleballMark';
+import BrandMark from '@/components/BrandMark';
 import type { Profile } from '@/lib/types/app';
 
 interface NavigationProps {
@@ -39,8 +39,8 @@ export default function Navigation({ user }: NavigationProps) {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 font-bold text-xl tracking-tight">
-            <PickleballMark className="w-7 h-7 text-accent-400" />
-            <span>CFC Pickleball League</span>
+            <BrandMark className="w-7 h-7 text-accent-400" />
+            <span>CFC Sports Tournaments</span>
           </Link>
 
           {/* Desktop nav */}

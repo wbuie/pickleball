@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import TournamentCard from '@/components/tournaments/TournamentCard';
-import PickleballMark from '@/components/PickleballMark';
+import BrandMark from '@/components/BrandMark';
 import type { TournamentWithCounts } from '@/lib/types/app';
 
 export default async function TournamentsPage({
@@ -43,7 +43,7 @@ export default async function TournamentsPage({
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Tournaments</h1>
-          <p className="text-gray-500 mt-1">Find and join a pickleball tournament near you</p>
+          <p className="text-gray-500 mt-1">Find and join a tournament near you</p>
         </div>
         {isAdmin && (
           <Link
@@ -63,7 +63,7 @@ export default async function TournamentsPage({
 
       {enriched.length === 0 && (
         <div className="text-center py-20 text-gray-400">
-          <PickleballMark className="w-14 h-14 mx-auto mb-3 text-gray-300" />
+          <BrandMark className="w-14 h-14 mx-auto mb-3 text-gray-300" />
           <p className="font-medium text-gray-600">No tournaments yet</p>
           {isAdmin && (
             <Link href="/tournaments/new" className="mt-3 inline-block text-brand-700 font-medium hover:underline">

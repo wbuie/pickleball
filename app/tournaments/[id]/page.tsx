@@ -21,9 +21,9 @@ export async function generateMetadata({
     .eq('id', id)
     .single();
 
-  if (!tournament) return { title: 'Tournament Not Found – CFC Pickleball League' };
+  if (!tournament) return { title: 'Tournament Not Found – CFC Sports Tournaments' };
 
-  const title = `${tournament.name} – CFC Pickleball League`;
+  const title = `${tournament.name} – CFC Sports Tournaments`;
   const description =
     tournament.description ||
     `${FORMAT_LABELS[tournament.format as 'single_elimination' | 'double_elimination']} · ${STATUS_LABELS[tournament.status as keyof typeof STATUS_LABELS]}. Hosted by Christ Fellowship Church, Birmingham.`;
