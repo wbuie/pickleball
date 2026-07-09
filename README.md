@@ -8,6 +8,7 @@ A tournament hosting web app for **Christ Fellowship Church, Birmingham**. Built
 - **Singles & Doubles (pickleball)** — Doubles entries are two-player teams: a player can pick their partner when registering, or an organizer can pair players on the admin panel. Teams are seeded by their average skill
 - **Team events (basketball)** — 3v3/4v4/5v5 entries are named teams with a captain and a roster. A captain names the team and picks teammates when registering, or an organizer creates teams and fills rosters on the admin panel. Teams are seeded by their roster's average skill
 - **Player Registration** — Players create accounts and set their skill level by either picking a plain-language description ("Brand new", "Recreational", "Advanced", …) or entering a DUPR rating (2.0–5.0) if they know it
+- **Password reset** — A self-serve "Forgot password?" flow: players request a reset email, click the link, and set a new password (Supabase Auth recovery; the link routes through `/auth/callback` → `/auth/reset`)
 - **Tournament Management** — Admins create tournaments with format, date, location, and capacity
 - **Single Elimination** — Standard knockout bracket with proper seeding and byes
 - **Double Elimination** — Full WB/LB/Grand Finals structure with reset match support
