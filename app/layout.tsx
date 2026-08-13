@@ -3,6 +3,7 @@ import { DM_Serif_Text, Mulish, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import Navigation from '@/components/Navigation';
 import BrandMark from '@/components/BrandMark';
+import RecoveryHashRedirect from '@/components/auth/RecoveryHashRedirect';
 import { createClient } from '@/lib/supabase/server';
 
 // Fonts matched to Christ Fellowship Church's site (cfcbirmingham.org):
@@ -34,6 +35,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en" className={`${mulish.variable} ${dmSerif.variable} ${geistMono.variable} h-full`}>
       <body className="min-h-full flex flex-col antialiased">
+        <RecoveryHashRedirect />
         <Navigation user={profile} />
         <main className="flex-1">{children}</main>
         <footer className="bg-brand-900 text-brand-300 text-xs py-4 mt-auto">
