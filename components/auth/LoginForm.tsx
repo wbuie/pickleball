@@ -6,12 +6,12 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import BrandMark from '@/components/BrandMark';
 
-export default function LoginForm() {
+export default function LoginForm({ initialError = '' }: { initialError?: string }) {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(initialError);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
