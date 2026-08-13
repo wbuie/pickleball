@@ -18,11 +18,33 @@ export default function ResetPasswordForm() {
 
   useEffect(() => {
     const supabase = createClient();
-    // Arriving from the emailed link (via /auth/callback) establishes a
-    // recovery session. Without one, there's nothing to update.
-    supabase.auth.getSession().then(({ data }) => {
-      setReady(!!data.session);
+    let settled = false;
+    const markReady = (value: boolean) => {
+      if (!settled) {
+        settled = true;
+        setReady(value);
+      }
+    };
+
+    // The recovery link establishes the session on this page. It can arrive as
+    // a URL hash (implicit flow) or a ?code to exchange (PKCE); the SDK parses
+    // whichever it finds on load and emits an auth event. Listen for that event
+    // rather than reading the session before the link has been processed.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) markReady(true);
     });
+
+    // Cover the case where the session is already present (e.g. no token in the
+    // URL to process), and fall back to "invalid" if nothing shows up in time.
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) markReady(true);
+    });
+    const timer = setTimeout(() => markReady(false), 3000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timer);
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
