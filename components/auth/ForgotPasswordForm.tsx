@@ -18,10 +18,13 @@ export default function ForgotPasswordForm() {
     setError('');
 
     const supabase = createClient();
-    // The emailed link lands on /auth/callback, which exchanges the recovery
-    // code for a session and forwards to /auth/reset to set a new password.
+    // Send the user straight to /auth/reset. Recovery links can arrive as a URL
+    // hash (implicit flow) — which the server never sees — or as a ?code (PKCE),
+    // so the destination must be a client page that can read either. A plain
+    // path with no query string also matches the Supabase redirect allowlist
+    // (e.g. `.../**`) cleanly, where a nested `?next=` query does not.
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${window.location.origin}/auth/callback?next=/auth/reset`,
+      redirectTo: `${window.location.origin}/auth/reset`,
     });
 
     if (error) {
