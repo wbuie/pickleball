@@ -14,30 +14,36 @@ export default async function HomePage() {
       registered_count:tournament_registrations(count)
     `)
     .order('created_at', { ascending: false })
-    .limit(6);
+    .limit(12);
 
   const enriched: TournamentWithCounts[] = (tournaments || []).map(t => ({
     ...t,
     registered_count: (t.registered_count as unknown as { count: number }[])?.[0]?.count ?? 0,
   }));
 
+  // Tournaments that are underway (or seeding). These are the ones with scores
+  // to follow, so they get top billing — one tap from the front page to the
+  // live bracket, no account required.
+  const live = enriched.filter(t => t.status === 'active' || t.status === 'seeding');
+  const recent = enriched.slice(0, 6);
+
   return (
     <div>
       {/* Hero */}
       <div className="bg-gradient-to-br from-brand-800 to-brand-900 text-white">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-20 text-center">
-          <BrandMark className="w-20 h-20 mx-auto mb-4 text-accent-400" />
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-14 sm:py-20 text-center">
+          <BrandMark className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 text-accent-400" />
           <p className="text-accent-400 font-semibold tracking-wide uppercase text-sm mb-2">
             Christ Fellowship Church · Birmingham
           </p>
           <h1 className="text-4xl sm:text-5xl font-extrabold mb-4 tracking-tight">
             CFC Sports Tournaments
           </h1>
-          <p className="text-brand-200 text-xl mb-8 max-w-xl mx-auto">
+          <p className="text-brand-200 text-lg sm:text-xl mb-8 max-w-xl mx-auto">
             Come play, compete, and connect. Tournaments for every skill level —
             whether you&apos;re brand new or a seasoned competitor, there&apos;s a spot for you.
           </p>
-          <div className="flex gap-4 justify-center flex-wrap">
+          <div className="flex gap-3 sm:gap-4 justify-center flex-wrap">
             <Link
               href="/tournaments"
               className="bg-accent-500 hover:bg-accent-400 text-accent-900 font-bold px-7 py-3 rounded-xl text-lg transition-colors shadow-lg"
@@ -53,6 +59,34 @@ export default async function HomePage() {
           </div>
         </div>
       </div>
+
+      {/* Live now — jump straight to the bracket & scores */}
+      {live.length > 0 && (
+        <div className="bg-white border-b border-brand-100">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2.5">
+                <span className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500" />
+                </span>
+                Happening Now
+              </h2>
+              <Link href="/tournaments" className="text-brand-700 text-sm font-medium hover:underline">
+                View all →
+              </Link>
+            </div>
+            <p className="text-gray-500 text-sm mb-5">
+              Tap a tournament to follow the bracket and check scores live — no account needed.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {live.map(t => (
+                <TournamentCard key={t.id} tournament={t} />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Features */}
       <div className="bg-white py-16">
@@ -77,7 +111,7 @@ export default async function HomePage() {
       </div>
 
       {/* Recent tournaments */}
-      {enriched.length > 0 && (
+      {recent.length > 0 && (
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-12">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-gray-900">Recent Tournaments</h2>
@@ -86,7 +120,7 @@ export default async function HomePage() {
             </Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {enriched.map(t => (
+            {recent.map(t => (
               <TournamentCard key={t.id} tournament={t} />
             ))}
           </div>
