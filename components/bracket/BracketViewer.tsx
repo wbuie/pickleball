@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 import SingleEliminationBracket from './SingleEliminationBracket';
 import DoubleEliminationBracket from './DoubleEliminationBracket';
+import MatchList from './MatchList';
 import ScoreModal from '@/components/admin/ScoreModal';
 import { createClient } from '@/lib/supabase/client';
 import type { Match, BracketEntry, BracketGrid, TournamentFormat } from '@/lib/types/app';
@@ -14,11 +15,40 @@ interface BracketViewerProps {
   players: BracketEntry[];
   format: TournamentFormat;
   isAdmin?: boolean;
+  // Registration id of the signed-in viewer's entry, if any — used by the list
+  // view to mark and pre-filter to "your" matches.
+  highlightEntryId?: string;
 }
 
-export default function BracketViewer({ tournamentId, matches, players, format, isAdmin }: BracketViewerProps) {
+type View = 'bracket' | 'list';
+
+const MOBILE_QUERY = '(max-width: 767px)';
+
+// Subscribe to a media query without a setState-in-effect. Returns false on the
+// server (and during hydration) so markup matches, then reconciles on the client.
+function useMediaQuery(query: string): boolean {
+  return useSyncExternalStore(
+    cb => {
+      const mql = window.matchMedia(query);
+      mql.addEventListener('change', cb);
+      return () => mql.removeEventListener('change', cb);
+    },
+    () => window.matchMedia(query).matches,
+    () => false
+  );
+}
+
+export default function BracketViewer({ tournamentId, matches, players, format, isAdmin, highlightEntryId }: BracketViewerProps) {
   const router = useRouter();
   const [scoringMatchId, setScoringMatchId] = useState<string | null>(null);
+
+  // Default to the mobile-friendly list on small screens (where the wide
+  // bracket diagram is hardest to read) and the diagram on larger screens,
+  // until the viewer explicitly picks a view.
+  const isMobile = useMediaQuery(MOBILE_QUERY);
+  const [override, setOverride] = useState<View | null>(null);
+  const view: View = override ?? (isMobile ? 'list' : 'bracket');
+  const setView = (v: View) => setOverride(v);
 
   // Live updates: refresh the server-rendered bracket whenever a match in this
   // tournament changes, so spectators see scores roll in without refreshing.
@@ -72,7 +102,35 @@ export default function BracketViewer({ tournamentId, matches, players, format, 
 
   return (
     <div>
-      {format === 'single_elimination' ? (
+      {/* View toggle: readable list (great on phones) vs. the full diagram */}
+      <div className="flex justify-end mb-4">
+        <div className="inline-flex rounded-lg border border-brand-200 bg-brand-50 p-0.5" role="group" aria-label="Bracket view">
+          {(['list', 'bracket'] as const).map(v => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setView(v)}
+              aria-pressed={view === v}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
+                view === v ? 'bg-white text-brand-800 shadow-sm' : 'text-brand-600 hover:text-brand-800'
+              }`}
+            >
+              {v === 'list' ? 'Scores' : 'Bracket'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {view === 'list' ? (
+        <MatchList
+          grid={grid}
+          playerMap={playerMap}
+          format={format}
+          isAdmin={isAdmin}
+          onScoreClick={setScoringMatchId}
+          highlightEntryId={highlightEntryId}
+        />
+      ) : format === 'single_elimination' ? (
         <SingleEliminationBracket
           grid={grid}
           playerMap={playerMap}

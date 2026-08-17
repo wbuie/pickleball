@@ -79,14 +79,15 @@ export default async function TournamentPage({
   const entryNoun = entryNounFor(tournament.event_type as EventType);
   const sport = tournament.sport as Sport;
 
-  const isRegistered = user
-    ? registrations.some(
+  const myEntry = user
+    ? registrations.find(
         r =>
           r.player_id === user.id ||
           r.partner_id === user.id ||
           (r.members ?? []).some(m => m.player_id === user.id)
       )
-    : false;
+    : undefined;
+  const isRegistered = Boolean(myEntry);
 
   const isFull = registrations.length >= tournament.max_players;
 
@@ -208,6 +209,7 @@ export default async function TournamentPage({
             players={entries}
             format={tournament.format as 'single_elimination' | 'double_elimination'}
             isAdmin={profile?.is_admin ?? false}
+            highlightEntryId={myEntry?.id}
           />
         </div>
 
