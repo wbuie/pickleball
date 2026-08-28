@@ -16,6 +16,7 @@ export interface TournamentFormValues {
   event_type: EventType;
   max_players: number;
   court_count: number;
+  open_scoring: boolean;
   start_date: string | null;
   location: string | null;
 }
@@ -99,6 +100,7 @@ export default function TournamentForm({
       description: form.get('description'),
       ...structural,
       court_count: parseInt(form.get('court_count') as string) || 1,
+      open_scoring: form.get('open_scoring') === 'on',
       start_date: form.get('start_date') || null,
       location: form.get('location') || null,
     };
@@ -274,6 +276,27 @@ export default function TournamentForm({
               How many courts you&rsquo;ll play on. Matches are handed a court number as they come up,
               so everyone knows where to go — change this any time if courts open up or go away.
             </p>
+          </div>
+
+          <div>
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                id="t-open-scoring"
+                name="open_scoring"
+                type="checkbox"
+                defaultChecked={initial?.open_scoring ?? false}
+                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand-700 focus:ring-2 focus:ring-brand-500"
+              />
+              <span className="text-sm">
+                <span className="font-medium text-gray-700">Anyone can submit scores</span>
+                <span className="block text-xs text-gray-400 mt-0.5">
+                  Players enter their own results instead of waiting on an organizer: anyone with the
+                  link can score a match that hasn&rsquo;t been played yet. Changing a score
+                  that&rsquo;s already in stays with admins. You can switch this on or off any time
+                  from the admin panel.
+                </span>
+              </span>
+            </label>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

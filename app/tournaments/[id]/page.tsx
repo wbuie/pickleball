@@ -163,6 +163,11 @@ export default async function TournamentPage({
               <span>
                 🏟️ {courtCount} court{courtCount === 1 ? '' : 's'}
               </span>
+              {tournament.open_scoring && (
+                <span title="Tap a match in the bracket to type in its score">
+                  🖊️ Anyone can enter scores
+                </span>
+              )}
             </div>
           </div>
 
@@ -222,6 +227,7 @@ export default async function TournamentPage({
             players={entries}
             format={tournament.format as 'single_elimination' | 'double_elimination'}
             isAdmin={profile?.is_admin ?? false}
+            openScoring={tournament.open_scoring ?? false}
             courtCount={courtCount}
             highlightEntryId={myEntry?.id}
           />

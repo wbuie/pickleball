@@ -4,9 +4,9 @@ import { syncCourtAssignments } from '@/lib/bracket/courts';
 import { SPORT_EVENT_TYPES, isSport, isRosterEvent, MIN_COURTS, MAX_COURTS } from '@/lib/types/app';
 
 // Edit an existing tournament. Name/description/date/location are always
-// editable, as is the number of courts (they can change on the day); the event
-// type, format, and size can only change before the bracket is generated
-// (afterwards they'd invalidate the matches).
+// editable, as are the number of courts (they can change on the day) and who is
+// allowed to enter scores; the event type, format, and size can only change
+// before the bracket is generated (afterwards they'd invalidate the matches).
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -29,13 +29,13 @@ export async function PATCH(
 
     const { data: current } = await supabase
       .from('tournaments')
-      .select('status, sport, format, event_type, max_players, court_count')
+      .select('status, sport, format, event_type, max_players, court_count, open_scoring')
       .eq('id', id)
       .single();
     if (!current) return NextResponse.json({ error: 'Tournament not found' }, { status: 404 });
 
     const body = await request.json();
-    const { name, description, court_count, start_date, location } = body;
+    const { name, description, court_count, open_scoring, start_date, location } = body;
     // A structural field the client couldn't edit comes through as null (or is
     // absent) — either way it means "leave this alone", not "set it to null".
     // description/start_date/location are different: null clears them.
@@ -74,8 +74,17 @@ export async function PATCH(
       }
     }
 
+    // Handing scoring to the players isn't structural either — an organizer
+    // flips it mid-event when there's nobody free to run the scoreboard.
+    if (open_scoring !== undefined && open_scoring !== null && typeof open_scoring !== 'boolean') {
+      return NextResponse.json({ error: 'open_scoring must be true or false' }, { status: 400 });
+    }
+
     const updates: Record<string, unknown> = {};
     if (changingCourts) updates.court_count = court_count;
+    if (typeof open_scoring === 'boolean' && open_scoring !== current.open_scoring) {
+      updates.open_scoring = open_scoring;
+    }
     if (name !== undefined) updates.name = `${name}`.trim();
     if (description !== undefined) updates.description = description || null;
     if (start_date !== undefined) updates.start_date = start_date || null;

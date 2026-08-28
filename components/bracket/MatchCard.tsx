@@ -1,10 +1,13 @@
 'use client';
 
+import { canScoreMatch } from '@/lib/types/app';
 import type { Match, BracketEntry } from '@/lib/types/app';
 
 interface MatchCardProps {
   match: Match & { player1?: BracketEntry; player2?: BracketEntry };
   isAdmin?: boolean;
+  // The tournament lets anyone enter a score, not just an admin.
+  openScoring?: boolean;
   onScoreClick?: (matchId: string) => void;
   compact?: boolean;
 }
@@ -56,12 +59,20 @@ function PlayerRow({
   );
 }
 
-export default function MatchCard({ match, isAdmin, onScoreClick, compact = false }: MatchCardProps) {
+export default function MatchCard({ match, isAdmin, openScoring, onScoreClick, compact = false }: MatchCardProps) {
   const isCompleted = match.status === 'completed';
   const isBye = match.status === 'bye';
   const bothPlayers = Boolean(match.player1_id && match.player2_id);
-  // Admins can score a ready match, or edit one that's already completed.
-  const isClickable = Boolean(isAdmin && !isBye && bothPlayers);
+  // Admins can score a ready match, or edit one that's already completed. With
+  // open scoring on, anyone can enter a result that isn't in yet.
+  const isClickable =
+    !isBye &&
+    bothPlayers &&
+    canScoreMatch({
+      isAdmin: Boolean(isAdmin),
+      openScoring: Boolean(openScoring),
+      status: match.status,
+    });
 
   const p1IsWinner = isCompleted && match.winner_id === match.player1_id;
   const p2IsWinner = isCompleted && match.winner_id === match.player2_id;

@@ -18,6 +18,8 @@ A tournament hosting web app for **Christ Fellowship Church, Birmingham**. Built
 - **Courts** — An organizer says how many courts the event runs on, and every match that's ready to play is handed a court number. Courts recycle themselves: entering a score frees that court for the next match in line, and players see an "On the courts" board (plus a "You're up on Court 3" callout) on the tournament page. Court count can change mid-event, and an admin can move any match to a specific court
 - **Printable QR sign** — Every tournament gets a QR code pointing at its page. Organizers find it on the tournament's edit screen and can print a full-sheet sign (name, date, location, big code) to tape up at the check-in table, or download the bare code as PNG/SVG for a flyer or slide. The same code carries the event from sign-ups through live scores
 - **Live Scoring** — Admins enter scores; winners advance automatically through the bracket, and the bracket updates in real time for spectators (Supabase Realtime) without refreshing
+- **Open scoring (optional)** — Per tournament, an organizer can switch on **"anyone can submit scores"** (admin panel → Scoring, or the create/edit form). Anyone with the link or QR code can then tap a match that hasn't been played yet and type the score in — no sign-in needed. Correcting a score that's already in stays with admins, so a mistake can't be quietly rewritten. Off by default
+- **Withdrawals** — An organizer can remove any entry from the admin panel — a single player, a doubles pair, or a whole basketball roster — right up until the bracket is generated. The remaining seeds are renumbered so the field stays 1..n
 - **Editable Results** — Admins can correct a completed match; if the result hasn't already cascaded into a played match, the change re-propagates automatically
 - **Visual Brackets** — Clean horizontal bracket visualization for both formats
 - **Role-Based Access** — Admin vs player permissions enforced via Supabase RLS (the admin panel is also guarded server-side)
@@ -62,6 +64,7 @@ npm install
    - `007_admin_email_allowlist.sql` — `admin_emails` allowlist so organizers can grant admin by email (promotes existing accounts and auto-grants on signup)
    - `008_basketball_rating.sql` — per-player `basketball_skill_level` (1–5 tiers) used to seed basketball tournaments
    - `009_courts.sql` — courts: `tournaments.court_count` and `matches.court`, so matches get a court number players can look up
+   - `010_open_scoring.sql` — `tournaments.open_scoring`, the per-tournament switch that lets anyone (not just an admin) enter a match score
 
 ### 3. Configure Environment Variables
 
@@ -116,7 +119,7 @@ npm test
 3. **Admin** opens the Admin Panel → optionally adjusts seeding → clicks **Generate Bracket**
 4. Seeds 1–N are assigned by DUPR rating (highest = seed 1); byes go to top seeds
 5. Every match that's ready to play is given a court (1…court count); the rest wait in line
-6. **Admin** clicks any ready match → enters scores → winner advances automatically, and the court passes to the next match
+6. **Admin** clicks any ready match → enters scores → winner advances automatically, and the court passes to the next match (with **open scoring** on, any player can do this for a match that hasn't been scored yet)
 7. Double elimination: losers drop to the Losers Bracket; Grand Finals can have a Reset match
 
 ---

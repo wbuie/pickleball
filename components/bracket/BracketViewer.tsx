@@ -7,6 +7,7 @@ import DoubleEliminationBracket from './DoubleEliminationBracket';
 import MatchList from './MatchList';
 import ScoreModal from '@/components/admin/ScoreModal';
 import { createClient } from '@/lib/supabase/client';
+import { canScoreMatch } from '@/lib/types/app';
 import type { Match, BracketEntry, BracketGrid, TournamentFormat } from '@/lib/types/app';
 
 interface BracketViewerProps {
@@ -15,6 +16,10 @@ interface BracketViewerProps {
   players: BracketEntry[];
   format: TournamentFormat;
   isAdmin?: boolean;
+  // The organizer has opened scoring up: anyone can enter the score for a match
+  // that hasn't been played yet (an admin is still the only one who can change
+  // a score that's already in).
+  openScoring?: boolean;
   // How many courts the tournament runs on, so an admin can move a match.
   courtCount: number;
   // Registration id of the signed-in viewer's entry, if any — used by the list
@@ -40,7 +45,7 @@ function useMediaQuery(query: string): boolean {
   );
 }
 
-export default function BracketViewer({ tournamentId, matches, players, format, isAdmin, courtCount, highlightEntryId }: BracketViewerProps) {
+export default function BracketViewer({ tournamentId, matches, players, format, isAdmin, openScoring, courtCount, highlightEntryId }: BracketViewerProps) {
   const router = useRouter();
   const [scoringMatchId, setScoringMatchId] = useState<string | null>(null);
 
@@ -91,6 +96,17 @@ export default function BracketViewer({ tournamentId, matches, players, format, 
   grid.grandFinals.sort((a, b) => a.round - b.round);
 
   const scoringMatch = scoringMatchId ? matches.find(m => m.id === scoringMatchId) : null;
+  // Re-check the permission here rather than trusting the click: the bracket
+  // refreshes live, so a match can be scored by someone else while the modal is
+  // open — and once it is, only an admin may change it.
+  const canScore =
+    scoringMatch !== null &&
+    scoringMatch !== undefined &&
+    canScoreMatch({
+      isAdmin: Boolean(isAdmin),
+      openScoring: Boolean(openScoring),
+      status: scoringMatch.status,
+    });
 
   if (matches.length === 0) {
     return (
@@ -129,6 +145,7 @@ export default function BracketViewer({ tournamentId, matches, players, format, 
           playerMap={playerMap}
           format={format}
           isAdmin={isAdmin}
+          openScoring={openScoring}
           onScoreClick={setScoringMatchId}
           highlightEntryId={highlightEntryId}
         />
@@ -137,6 +154,7 @@ export default function BracketViewer({ tournamentId, matches, players, format, 
           grid={grid}
           playerMap={playerMap}
           isAdmin={isAdmin}
+          openScoring={openScoring}
           onScoreClick={setScoringMatchId}
         />
       ) : (
@@ -144,17 +162,19 @@ export default function BracketViewer({ tournamentId, matches, players, format, 
           grid={grid}
           playerMap={playerMap}
           isAdmin={isAdmin}
+          openScoring={openScoring}
           onScoreClick={setScoringMatchId}
         />
       )}
 
-      {scoringMatch && isAdmin && (
+      {scoringMatch && canScore && (
         <ScoreModal
           match={{
             ...scoringMatch,
             player1: scoringMatch.player1_id ? playerMap.get(scoringMatch.player1_id) : undefined,
             player2: scoringMatch.player2_id ? playerMap.get(scoringMatch.player2_id) : undefined,
           }}
+          isAdmin={Boolean(isAdmin)}
           courtCount={courtCount}
           onClose={() => setScoringMatchId(null)}
           onChange={() => router.refresh()}

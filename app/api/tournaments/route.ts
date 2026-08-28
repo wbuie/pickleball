@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, description, sport, format, event_type, max_players, court_count, start_date, location } = body;
+    const { name, description, sport, format, event_type, max_players, court_count, open_scoring, start_date, location } = body;
 
     if (!name || !format) {
       return NextResponse.json({ error: 'Name and format are required' }, { status: 400 });
@@ -60,6 +60,9 @@ export async function POST(request: NextRequest) {
         event_type: chosenEvent,
         max_players: max_players || 16,
         court_count: courts,
+        // Off unless the organizer asks for it: scoring stays with admins by
+        // default, and can be opened up here or from the admin panel later.
+        open_scoring: open_scoring === true,
         start_date: start_date || null,
         location: location || null,
         created_by: user.id,

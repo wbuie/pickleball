@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  canScoreMatch,
   entryName,
   entrySkill,
   entryPlayers,
@@ -186,5 +187,33 @@ describe('event helpers', () => {
     expect(isSport('basketball')).toBe(true);
     expect(isSport('tennis')).toBe(false);
     expect(isSport(null)).toBe(false);
+  });
+});
+
+describe('canScoreMatch', () => {
+  const pending = { status: 'pending' } as const;
+
+  it('lets an admin score whatever the tournament allows', () => {
+    expect(canScoreMatch({ isAdmin: true, openScoring: false, ...pending })).toBe(true);
+    expect(canScoreMatch({ isAdmin: true, openScoring: false, status: 'completed' })).toBe(true);
+    expect(canScoreMatch({ isAdmin: true, openScoring: true, status: 'in_progress' })).toBe(true);
+  });
+
+  it('keeps scoring with admins by default', () => {
+    expect(canScoreMatch({ isAdmin: false, openScoring: false, ...pending })).toBe(false);
+    expect(canScoreMatch({ isAdmin: false, openScoring: false, status: 'in_progress' })).toBe(false);
+  });
+
+  it('lets anyone score an unplayed match when open scoring is on', () => {
+    expect(canScoreMatch({ isAdmin: false, openScoring: true, ...pending })).toBe(true);
+    expect(canScoreMatch({ isAdmin: false, openScoring: true, status: 'in_progress' })).toBe(true);
+  });
+
+  it('still sends a correction to an admin', () => {
+    expect(canScoreMatch({ isAdmin: false, openScoring: true, status: 'completed' })).toBe(false);
+  });
+
+  it('never offers a bye up for scoring', () => {
+    expect(canScoreMatch({ isAdmin: false, openScoring: true, status: 'bye' })).toBe(false);
   });
 });

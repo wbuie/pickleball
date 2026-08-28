@@ -55,3 +55,26 @@ export function getWinnersRoundCount(grid: BracketGrid): number {
 export function getLosersRoundCount(grid: BracketGrid): number {
   return Math.max(...Object.keys(grid.losers).map(Number), 0);
 }
+
+// Close the gaps in a field's seeds after entries are removed, so they run
+// 1..n again. Seeds aren't cosmetic: getSeedOrder maps a bracket slot to a seed
+// *number* and generation drops any seed above the field size, so a hole left
+// by a withdrawn entry (say 1, 2, 4 for three entries) would silently turn a
+// real entry into a bye. Entries keep their relative order — an unseeded entry
+// (null) sorts last. Only the rows that actually move are returned, so the
+// caller writes as little as possible.
+export function resequenceSeeds<T extends { id: string; seed: number | null }>(
+  entries: T[]
+): { id: string; seed: number }[] {
+  const ordered = [...entries].sort((a, b) => {
+    if (a.seed === null && b.seed === null) return 0;
+    if (a.seed === null) return 1;
+    if (b.seed === null) return -1;
+    return a.seed - b.seed;
+  });
+
+  return ordered
+    .map((entry, i) => ({ id: entry.id, seed: i + 1, was: entry.seed }))
+    .filter(row => row.was !== row.seed)
+    .map(({ id, seed }) => ({ id, seed }));
+}

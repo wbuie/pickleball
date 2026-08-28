@@ -8,6 +8,8 @@ interface SingleEliminationBracketProps {
   grid: BracketGrid;
   playerMap: Map<string, BracketEntry>;
   isAdmin?: boolean;
+  // The tournament lets anyone enter a score, not just an admin.
+  openScoring?: boolean;
   onScoreClick?: (matchId: string) => void;
 }
 
@@ -30,6 +32,7 @@ export default function SingleEliminationBracket({
   grid,
   playerMap,
   isAdmin,
+  openScoring,
   onScoreClick,
 }: SingleEliminationBracketProps) {
   const numRounds = getWinnersRoundCount(grid);
@@ -79,6 +82,7 @@ export default function SingleEliminationBracket({
                         <MatchCard
                           match={match}
                           isAdmin={isAdmin}
+                          openScoring={openScoring}
                           onScoreClick={onScoreClick}
                         />
                       </div>

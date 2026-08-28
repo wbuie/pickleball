@@ -11,6 +11,7 @@ import {
   EVENT_LABELS,
   SPORT_LABELS,
   entryName,
+  entryPlayers,
   entrySkill,
   entryNoun as entryNounFor,
   isRosterEvent,
@@ -31,6 +32,16 @@ interface AdminPanelProps {
   tournament: Tournament;
   registrations: TournamentRegistration[];
   members: MemberOption[];
+}
+
+// Seed drafts as they stand on the server: the saved seed, or the entry's place
+// in the list for anyone not seeded yet.
+function defaultSeeds(registrations: TournamentRegistration[]): Record<string, number> {
+  const seeds: Record<string, number> = {};
+  registrations.forEach((r, i) => {
+    seeds[r.id] = r.seed ?? i + 1;
+  });
+  return seeds;
 }
 
 export default function AdminPanel({ tournament, registrations, members }: AdminPanelProps) {
@@ -58,13 +69,20 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
   const [playerToAdd, setPlayerToAdd] = useState('');
   const [newTeamName, setNewTeamName] = useState('');
   const [addingPlayer, setAddingPlayer] = useState(false);
-  const [seeds, setSeeds] = useState<Record<string, number>>(() => {
-    const s: Record<string, number> = {};
-    registrations.forEach((r, i) => {
-      s[r.id] = r.seed ?? i + 1;
-    });
-    return s;
-  });
+  const [removingId, setRemovingId] = useState<string | null>(null);
+  const [openScoring, setOpenScoring] = useState(tournament.open_scoring);
+  const [savingScoring, setSavingScoring] = useState(false);
+  const [seeds, setSeeds] = useState<Record<string, number>>(() => defaultSeeds(registrations));
+
+  // Adding or removing an entry renumbers the seeds server-side, so re-derive
+  // the drafts whenever the field itself changes rather than letting them drift
+  // (the standard "adjust state during render" pattern — no effect needed).
+  const fieldKey = registrations.map(r => `${r.id}:${r.seed ?? ''}`).join('|');
+  const [seededFrom, setSeededFrom] = useState(fieldKey);
+  if (seededFrom !== fieldKey) {
+    setSeededFrom(fieldKey);
+    setSeeds(defaultSeeds(registrations));
+  }
 
   const isBracketGenerated = tournament.status === 'active' || tournament.status === 'completed';
   const unpairedCount = isDoubles ? registrations.filter(r => !r.partner_id).length : 0;
@@ -196,6 +214,63 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
       setError(data.error || 'Failed to update courts');
     }
     setSavingCourts(false);
+  };
+
+  // People drop out — an organizer takes the whole entry off the list, whether
+  // that's one player or a team. Doubles pairs come off together; to drop just
+  // one of the two, unpair the team first and then remove the player who is out.
+  const handleRemoveEntry = async (reg: TournamentRegistration) => {
+    const name = entryName(reg);
+    const playerCount = entryPlayers(reg).length;
+    const warning =
+      playerCount > 1
+        ? `Remove ${name} from this tournament? All ${playerCount} players on the entry come off the list.`
+        : `Remove ${name} from this tournament?`;
+    if (!confirm(`${warning} You can add them back any time before the bracket is generated.`)) return;
+
+    setRemovingId(reg.id);
+    setError('');
+    setSuccess('');
+    const res = await fetch(`/api/tournaments/${id}/registrations`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ registrationId: reg.id }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) {
+      setSuccess(`Removed ${data.removed ?? name}.`);
+      router.refresh();
+    } else {
+      setError(data.error || 'Failed to remove the entry');
+    }
+    setRemovingId(null);
+  };
+
+  // Hand scoring to the players (or take it back). Saved as soon as it's
+  // clicked, and reverted if the save fails so the switch never lies.
+  const handleToggleOpenScoring = async (next: boolean) => {
+    setOpenScoring(next);
+    setSavingScoring(true);
+    setError('');
+    setSuccess('');
+    const res = await fetch(`/api/tournaments/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ open_scoring: next }),
+    });
+    if (res.ok) {
+      setSuccess(
+        next
+          ? 'Anyone can now enter scores for matches that have not been played yet.'
+          : 'Scoring is admins only again.'
+      );
+      router.refresh();
+    } else {
+      const data = await res.json().catch(() => ({}));
+      setOpenScoring(!next);
+      setError(data.error || 'Failed to change who can enter scores');
+    }
+    setSavingScoring(false);
   };
 
   const handleSaveSeeds = async () => {
@@ -448,6 +523,18 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
                         </button>
                       )
                     )}
+
+                    {/* Withdrawals: take the whole entry off the list. */}
+                    {!isBracketGenerated && (
+                      <button
+                        onClick={() => handleRemoveEntry(reg)}
+                        disabled={removingId === reg.id}
+                        aria-label={`Remove ${entryName(reg)} from this tournament`}
+                        className="text-xs text-red-700 border border-red-200 px-2.5 py-1 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
+                      >
+                        {removingId === reg.id ? 'Removing…' : 'Remove'}
+                      </button>
+                    )}
                   </div>
 
                   {/* Basketball roster: captain + members, with add/remove. */}
@@ -622,6 +709,33 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
         </div>
       </div>
 
+      {/* Who can enter scores */}
+      <div className="bg-white rounded-2xl shadow-sm border border-brand-100 p-6 mb-6">
+        <h2 className="text-lg font-bold text-gray-900 mb-1">Scoring</h2>
+        <p className="text-sm text-gray-500 mb-4">
+          By default only admins enter scores. Hand it to the players when there&rsquo;s nobody free to
+          run the scoreboard — they finish a game, open the tournament page, and type the score in.
+        </p>
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={openScoring}
+            disabled={savingScoring}
+            onChange={e => handleToggleOpenScoring(e.target.checked)}
+            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand-700 focus:ring-2 focus:ring-brand-500 disabled:opacity-50"
+          />
+          <span className="text-sm">
+            <span className="font-medium text-gray-800">Anyone can submit scores</span>
+            <span className="block text-gray-500 mt-0.5">
+              Anyone with the link or QR code can score a match that hasn&rsquo;t been played yet — no
+              sign-in needed. Changing a score that&rsquo;s already in stays with admins, so a wrong
+              entry can&rsquo;t be quietly rewritten.
+            </span>
+          </span>
+        </label>
+        {savingScoring && <p className="text-xs text-gray-400 mt-2">Saving…</p>}
+      </div>
+
       {/* Tournament Info */}
       <div className="bg-white rounded-2xl shadow-sm border border-brand-100 p-6">
         <h2 className="text-lg font-bold text-gray-900 mb-4">Tournament Info</h2>
@@ -649,6 +763,10 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
           <div className="flex gap-2">
             <dt className="text-gray-500 w-32">Courts</dt>
             <dd className="font-medium text-gray-800">{tournament.court_count ?? 1}</dd>
+          </div>
+          <div className="flex gap-2">
+            <dt className="text-gray-500 w-32">Scoring</dt>
+            <dd className="font-medium text-gray-800">{openScoring ? 'Anyone' : 'Admins only'}</dd>
           </div>
           {tournament.start_date && (
             <div className="flex gap-2">

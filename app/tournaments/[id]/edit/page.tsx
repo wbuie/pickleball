@@ -56,6 +56,7 @@ export default async function EditTournamentPage({
         event_type: tournament.event_type,
         max_players: tournament.max_players,
         court_count: tournament.court_count,
+        open_scoring: tournament.open_scoring,
         start_date: tournament.start_date,
         location: tournament.location,
       }}

@@ -46,6 +46,9 @@ export interface Tournament {
   // How many courts the event runs on. Playable matches are handed a court
   // number from 1..court_count so players know where to go.
   court_count: number;
+  // When true, anyone on the tournament page can enter a score for a match
+  // that hasn't been played yet — not just an admin. See canScoreMatch.
+  open_scoring: boolean;
   start_date: string | null;
   location: string | null;
   created_by: string;
@@ -313,4 +316,22 @@ export function entrySkill(reg: EntryLike, sport: Sport = 'pickleball'): number 
   if (reg.partner) ratings.push(ratingOf(reg.partner));
   (reg.members ?? []).forEach(m => ratings.push(ratingOf(m.profiles)));
   return ratings.reduce((sum, r) => sum + r, 0) / ratings.length;
+}
+
+// Who may enter the score for a match. Admins always can. With open scoring on,
+// so can anyone else — but only for a match that hasn't been scored yet:
+// correcting a completed result stays with admins, so a mistake (or a bit of
+// mischief) can't be quietly rewritten by the next person to walk past.
+export function canScoreMatch({
+  isAdmin,
+  openScoring,
+  status,
+}: {
+  isAdmin: boolean;
+  openScoring: boolean;
+  status: MatchStatus;
+}): boolean {
+  if (isAdmin) return true;
+  if (!openScoring) return false;
+  return status !== 'completed' && status !== 'bye';
 }

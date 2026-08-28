@@ -5,6 +5,10 @@ import type { Match, BracketEntry } from '@/lib/types/app';
 
 interface ScoreModalProps {
   match: Match & { player1?: BracketEntry; player2?: BracketEntry };
+  // Whether the viewer is an admin. Non-admins reach this modal through open
+  // scoring: they can enter a result, but moving a match between courts (and
+  // editing a score that's already in) stays with organizers.
+  isAdmin?: boolean;
   // How many courts this tournament runs on, so the court can be reassigned.
   courtCount: number;
   onClose: () => void;
@@ -13,7 +17,7 @@ interface ScoreModalProps {
   onSuccess: () => void;
 }
 
-export default function ScoreModal({ match, courtCount, onClose, onChange, onSuccess }: ScoreModalProps) {
+export default function ScoreModal({ match, isAdmin = true, courtCount, onClose, onChange, onSuccess }: ScoreModalProps) {
   const isEdit = match.status === 'completed';
   const [p1Score, setP1Score] = useState(match.player1_score?.toString() ?? '');
   const [p2Score, setP2Score] = useState(match.player2_score?.toString() ?? '');
@@ -143,6 +147,14 @@ export default function ScoreModal({ match, courtCount, onClose, onChange, onSuc
             />
           </div>
 
+          {!isAdmin && (
+            <p className="text-xs text-gray-500 bg-brand-50 border border-brand-100 rounded-lg px-3 py-2">
+              This tournament lets anyone enter scores. Check the numbers before you save — once a
+              score is in, only an organizer can change it.
+            </p>
+          )}
+
+          {isAdmin && (
           <div>
             <label htmlFor="match-court" className="block text-sm font-medium text-gray-700 mb-1">
               Court
@@ -164,6 +176,7 @@ export default function ScoreModal({ match, courtCount, onClose, onChange, onSuc
               queue; &ldquo;automatically&rdquo; hands it the next court that frees up.
             </p>
           </div>
+          )}
 
           {error && (
             <p className="text-red-600 text-sm bg-red-50 rounded-lg px-3 py-2">{error}</p>

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { nextPowerOf2, getNumRounds, getSeedOrder, groupMatchesByBracketAndRound } from './utils';
+import { nextPowerOf2, getNumRounds, getSeedOrder, groupMatchesByBracketAndRound, resequenceSeeds } from './utils';
 import { getLBMatchCount, getLBRoundCount } from './doubleElimination';
 import type { Match } from '@/lib/types/app';
 
@@ -103,5 +103,48 @@ describe('groupMatchesByBracketAndRound', () => {
     expect(grid.winners[1].map(x => x.position)).toEqual([0, 1]);
     expect(grid.losers[2]).toHaveLength(1);
     expect(grid.grandFinals.map(x => x.round)).toEqual([1, 2]);
+  });
+});
+
+describe('resequenceSeeds', () => {
+  it('closes the gap left by a withdrawn entry', () => {
+    // Seed 3 dropped out: the field has to run 1..3 again, or generation would
+    // read seed 4 as "above the field size" and turn a real entry into a bye.
+    expect(
+      resequenceSeeds([
+        { id: 'a', seed: 1 },
+        { id: 'b', seed: 2 },
+        { id: 'd', seed: 4 },
+      ])
+    ).toEqual([{ id: 'd', seed: 3 }]);
+  });
+
+  it('leaves an already-contiguous field alone', () => {
+    expect(
+      resequenceSeeds([
+        { id: 'a', seed: 1 },
+        { id: 'b', seed: 2 },
+      ])
+    ).toEqual([]);
+  });
+
+  it('keeps the running order and puts unseeded entries last', () => {
+    expect(
+      resequenceSeeds([
+        { id: 'unseeded', seed: null },
+        { id: 'third', seed: 9 },
+        { id: 'first', seed: 5 },
+        { id: 'second', seed: 7 },
+      ])
+    ).toEqual([
+      { id: 'first', seed: 1 },
+      { id: 'second', seed: 2 },
+      { id: 'third', seed: 3 },
+      { id: 'unseeded', seed: 4 },
+    ]);
+  });
+
+  it('handles an emptied field', () => {
+    expect(resequenceSeeds([])).toEqual([]);
   });
 });

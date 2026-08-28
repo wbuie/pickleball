@@ -8,6 +8,8 @@ interface DoubleEliminationBracketProps {
   grid: BracketGrid;
   playerMap: Map<string, BracketEntry>;
   isAdmin?: boolean;
+  // The tournament lets anyone enter a score, not just an admin.
+  openScoring?: boolean;
   onScoreClick?: (matchId: string) => void;
 }
 
@@ -28,6 +30,7 @@ function BracketSection({
   roundData,
   playerMap,
   isAdmin,
+  openScoring,
   onScoreClick,
   getRoundLabel,
   bgColor = 'bg-brand-50',
@@ -37,6 +40,8 @@ function BracketSection({
   roundData: Record<number, Match[]>;
   playerMap: Map<string, BracketEntry>;
   isAdmin?: boolean;
+  // The tournament lets anyone enter a score, not just an admin.
+  openScoring?: boolean;
   onScoreClick?: (matchId: string) => void;
   getRoundLabel: (r: number) => string;
   bgColor?: string;
@@ -73,6 +78,7 @@ function BracketSection({
                       <MatchCard
                         match={match}
                         isAdmin={isAdmin}
+                        openScoring={openScoring}
                         onScoreClick={onScoreClick}
                       />
                     </div>
@@ -91,6 +97,7 @@ export default function DoubleEliminationBracket({
   grid,
   playerMap,
   isAdmin,
+  openScoring,
   onScoreClick,
 }: DoubleEliminationBracketProps) {
   const wbRounds = getWinnersRoundCount(grid);
@@ -117,6 +124,7 @@ export default function DoubleEliminationBracket({
         roundData={grid.winners}
         playerMap={playerMap}
         isAdmin={isAdmin}
+        openScoring={openScoring}
         onScoreClick={onScoreClick}
         getRoundLabel={getWBLabel}
         bgColor="bg-brand-50"
@@ -130,6 +138,7 @@ export default function DoubleEliminationBracket({
           roundData={grid.losers}
           playerMap={playerMap}
           isAdmin={isAdmin}
+          openScoring={openScoring}
           onScoreClick={onScoreClick}
           getRoundLabel={getLBLabel}
           bgColor="bg-orange-50"
@@ -151,6 +160,7 @@ export default function DoubleEliminationBracket({
                 <MatchCard
                   match={match}
                   isAdmin={isAdmin}
+                  openScoring={openScoring}
                   onScoreClick={onScoreClick}
                 />
                 {idx === 1 && match.status === 'pending' && !match.player1_id && (

@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { canScoreMatch } from '@/lib/types/app';
 import type { Match, BracketEntry, BracketGrid, TournamentFormat } from '@/lib/types/app';
 import { getWinnersRoundCount, getLosersRoundCount } from '@/lib/bracket/utils';
 
@@ -9,6 +10,8 @@ interface MatchListProps {
   playerMap: Map<string, BracketEntry>;
   format: TournamentFormat;
   isAdmin?: boolean;
+  // The tournament lets anyone enter a score, not just an admin.
+  openScoring?: boolean;
   onScoreClick?: (matchId: string) => void;
   // Registration id of the signed-in viewer's entry, if they're in this
   // tournament — used to mark and pre-filter to "your" matches.
@@ -76,11 +79,13 @@ function PlayerLine({
 function MatchRow({
   match,
   isAdmin,
+  openScoring,
   onScoreClick,
   highlightEntryId,
 }: {
   match: EnrichedMatch;
   isAdmin?: boolean;
+  openScoring?: boolean;
   onScoreClick?: (matchId: string) => void;
   highlightEntryId?: string;
 }) {
@@ -88,7 +93,14 @@ function MatchRow({
   const isBye = match.status === 'bye';
   const isLive = match.status === 'in_progress';
   const bothPlayers = Boolean(match.player1_id && match.player2_id);
-  const isClickable = Boolean(isAdmin && !isBye && bothPlayers);
+  const isClickable =
+    !isBye &&
+    bothPlayers &&
+    canScoreMatch({
+      isAdmin: Boolean(isAdmin),
+      openScoring: Boolean(openScoring),
+      status: match.status,
+    });
   const involvesYou =
     Boolean(highlightEntryId) &&
     (match.player1_id === highlightEntryId || match.player2_id === highlightEntryId);
@@ -182,6 +194,7 @@ export default function MatchList({
   playerMap,
   format,
   isAdmin,
+  openScoring,
   onScoreClick,
   highlightEntryId,
 }: MatchListProps) {
@@ -316,6 +329,7 @@ export default function MatchList({
                         key={match.id}
                         match={match}
                         isAdmin={isAdmin}
+                        openScoring={openScoring}
                         onScoreClick={onScoreClick}
                         highlightEntryId={highlightEntryId}
                       />
