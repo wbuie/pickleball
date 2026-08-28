@@ -2,6 +2,9 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import TournamentQrCode, { CopyLinkButton } from '@/components/tournaments/TournamentQrCode';
+import { displayUrl } from '@/lib/url';
 import type { EventType, Sport, TournamentFormat } from '@/lib/types/app';
 import { SPORT_EVENT_TYPES, SPORT_LABELS, EVENT_LABELS, MIN_COURTS, MAX_COURTS } from '@/lib/types/app';
 
@@ -35,6 +38,9 @@ interface TournamentFormProps {
   structuralLocked?: boolean;
   // Lowest allowed max-entries value (can't drop below the current sign-ups).
   minMaxPlayers?: number;
+  // Absolute URL of the tournament page, for the shareable QR code. Only passed
+  // when editing — a tournament that doesn't exist yet has nothing to link to.
+  shareUrl?: string;
 }
 
 const MAX_OPTIONS = [4, 8, 16, 32, 64];
@@ -45,6 +51,7 @@ export default function TournamentForm({
   initial,
   structuralLocked = false,
   minMaxPlayers = 0,
+  shareUrl,
 }: TournamentFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -316,6 +323,47 @@ export default function TournamentForm({
           </div>
         </form>
       </div>
+
+      {/* Shareable QR code — an organizer prints this and tapes it up */}
+      {isEdit && shareUrl && (
+        <div className="bg-white rounded-2xl shadow-sm border border-brand-100 p-6 mt-6">
+          <h2 className="text-lg font-bold text-gray-900">Share this tournament</h2>
+          <p className="text-sm text-gray-500 mt-1">
+            Players scan this to open the tournament page — sign up, find their court, and follow the
+            bracket live.
+          </p>
+
+          <div className="mt-5 flex flex-col sm:flex-row gap-5 sm:items-center">
+            <div className="w-36 flex-shrink-0 mx-auto sm:mx-0">
+              <TournamentQrCode
+                url={shareUrl}
+                title={`QR code linking to ${initial?.name ?? 'this tournament'}`}
+                className="w-full h-auto rounded-lg border border-gray-200"
+              />
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <p className="font-mono text-sm text-gray-600 break-all">{displayUrl(shareUrl)}</p>
+              <div className="flex flex-wrap gap-2 mt-3">
+                <Link
+                  href={`/tournaments/${tournamentId}/qr`}
+                  className="bg-brand-700 hover:bg-brand-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+                >
+                  🖨️ Print QR sign
+                </Link>
+                <CopyLinkButton
+                  url={shareUrl}
+                  className="border border-gray-300 text-gray-700 text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                />
+              </div>
+              <p className="text-xs text-gray-400 mt-2">
+                The code points at the tournament page, so it keeps working as the event moves from
+                sign-ups to live scores — print it once.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -38,7 +38,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <RecoveryHashRedirect />
         <Navigation user={profile} />
         <main className="flex-1">{children}</main>
-        <footer className="bg-brand-900 text-brand-300 text-xs py-4 mt-auto">
+        <footer className="bg-brand-900 text-brand-300 text-xs py-4 mt-auto print:hidden">
           <p className="flex items-center justify-center gap-1.5">
             <BrandMark className="w-4 h-4 text-brand-300" />
             CFC Sports Tournaments · Christ Fellowship Church, Birmingham

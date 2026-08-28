@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import TournamentForm from '@/components/tournaments/TournamentForm';
+import { absoluteUrl } from '@/lib/url.server';
 import type { Tournament } from '@/lib/types/app';
 
 export default async function EditTournamentPage({
@@ -36,12 +37,17 @@ export default async function EditTournamentPage({
     .select('*', { count: 'exact', head: true })
     .eq('tournament_id', id);
 
+  // Built server-side from the request so the QR code scans to the right host
+  // on localhost, a preview deploy, and production alike.
+  const shareUrl = await absoluteUrl(`/tournaments/${id}`);
+
   return (
     <TournamentForm
       mode="edit"
       tournamentId={id}
       structuralLocked={structuralLocked}
       minMaxPlayers={count ?? 0}
+      shareUrl={shareUrl}
       initial={{
         name: tournament.name,
         description: tournament.description,
