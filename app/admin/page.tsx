@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import AdminDashboard from '@/components/admin/AdminDashboard';
+import AdminDashboard, { type ImportTarget } from '@/components/admin/AdminDashboard';
 import type { AdminEmail, AppSettings, Profile } from '@/lib/types/app';
 
 export default async function AdminPage() {
@@ -33,11 +33,19 @@ export default async function AdminPage() {
     .select('*')
     .order('created_at', { ascending: true });
 
+  // Tournaments an import can register people into.
+  const { data: openTournaments } = await supabase
+    .from('tournaments')
+    .select('id, name, event_type')
+    .eq('status', 'registration')
+    .order('created_at', { ascending: false });
+
   return (
     <AdminDashboard
       settings={(settings as AppSettings) ?? { id: 1, require_email: true, updated_at: '' }}
       players={(players as Profile[]) ?? []}
       adminEmails={(adminEmails as AdminEmail[]) ?? []}
+      openTournaments={(openTournaments as ImportTarget[]) ?? []}
       currentUserEmail={user.email ?? null}
       currentUserId={user.id}
     />

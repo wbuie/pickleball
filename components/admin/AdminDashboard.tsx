@@ -4,22 +4,50 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { SkillBadge, BasketballBadge } from '@/components/ui/Badge';
 import { SKILL_LEVELS, BASKETBALL_SKILL_LEVELS } from '@/lib/types/app';
-import type { AdminEmail, AppSettings, Profile } from '@/lib/types/app';
+import type { AdminEmail, AppSettings, EventType, Profile } from '@/lib/types/app';
+
+// Tournaments still taking sign-ups, so an import can go straight into one.
+export interface ImportTarget {
+  id: string;
+  name: string;
+  event_type: EventType;
+}
 
 interface Props {
   settings: AppSettings;
   players: Profile[];
   adminEmails: AdminEmail[];
+  openTournaments: ImportTarget[];
   currentUserEmail: string | null;
   currentUserId: string;
 }
 
 type RatingField = 'pickleball' | 'basketball';
 
+// What the import endpoint reports back for `preview: true` — what it *would*
+// do, before anything is written.
+interface ImportPreview {
+  players: { display_name: string; skill_level: number; email: string | null; existing: boolean }[];
+  new_players: number;
+  teams: { players: [string, string]; reason: 'mutual' | 'requested' | 'registration' | 'random' }[];
+  unpaired: string[];
+  warnings: string[];
+  errors: string[];
+  tournament: { id: string; name: string; event_type: EventType; entries: number; seats_left: number } | null;
+}
+
+const PAIR_REASON_LABELS: Record<ImportPreview['teams'][number]['reason'], string> = {
+  mutual: 'named each other',
+  requested: 'named as teammate',
+  registration: 'signed up together',
+  random: 'randomly paired',
+};
+
 export default function AdminDashboard({
   settings,
   players,
   adminEmails,
+  openTournaments,
   currentUserEmail,
   currentUserId,
 }: Props) {
@@ -35,6 +63,11 @@ export default function AdminDashboard({
 
   const [importing, setImporting] = useState(false);
   const [importMsg, setImportMsg] = useState('');
+  const [importTournament, setImportTournament] = useState('');
+  // The uploaded file, held until the organizer approves the preview.
+  const [pendingImport, setPendingImport] = useState<
+    { csv: string; fileName: string; preview: ImportPreview } | null
+  >(null);
 
   // Admin allowlist.
   const [adminEmailInput, setAdminEmailInput] = useState('');
@@ -104,29 +137,26 @@ export default function AdminDashboard({
     setAddingPlayer(false);
   };
 
+  // Step one: read the file and ask the server what it would do with it.
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setImporting(true);
     setImportMsg('');
     setError('');
+    setPendingImport(null);
 
     try {
       const text = await file.text();
       const res = await fetch('/api/players/import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ csv: text }),
+        body: JSON.stringify({ csv: text, preview: true, tournament_id: importTournament }),
       });
       const data = await res.json();
 
       if (res.ok) {
-        const skipped = (data.errors as string[] | undefined)?.length ?? 0;
-        setImportMsg(
-          `Imported ${data.imported} player${data.imported === 1 ? '' : 's'}.` +
-            (skipped ? ` ${skipped} row${skipped === 1 ? '' : 's'} skipped.` : '')
-        );
-        router.refresh();
+        setPendingImport({ csv: text, fileName: file.name, preview: data as ImportPreview });
       } else {
         setError(data.error || 'Import failed');
       }
@@ -136,6 +166,37 @@ export default function AdminDashboard({
       setImporting(false);
       e.target.value = '';
     }
+  };
+
+  // Step two: the organizer has looked the preview over.
+  const handleConfirmImport = async () => {
+    if (!pendingImport) return;
+    setImporting(true);
+    setError('');
+
+    const res = await fetch('/api/players/import', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ csv: pendingImport.csv, tournament_id: importTournament }),
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      const parts = [`Added ${data.imported} player${data.imported === 1 ? '' : 's'} to the roster`];
+      if (data.already_on_roster) parts.push(`${data.already_on_roster} already there`);
+      if (data.tournament) {
+        parts.push(
+          `registered ${data.registered} entr${data.registered === 1 ? 'y' : 'ies'} ` +
+            `(${data.teams} team${data.teams === 1 ? '' : 's'}) in ${data.tournament.name}`
+        );
+      }
+      setImportMsg(`${parts.join(', ')}.`);
+      setPendingImport(null);
+      router.refresh();
+    } else {
+      setError(data.error || 'Import failed');
+    }
+    setImporting(false);
   };
 
   const handleAddAdmin = async (e: React.FormEvent) => {
@@ -344,15 +405,44 @@ export default function AdminDashboard({
         <h2 className="text-lg font-bold text-gray-900 mb-1">Import players from a spreadsheet</h2>
         <p className="text-gray-500 text-xs mb-4">
           Upload a <span className="font-medium">.csv</span> file (in Excel, choose{' '}
-          <span className="font-medium">File → Save As → CSV</span>). Include a header row with a{' '}
-          <code className="bg-gray-100 px-1 rounded">name</code> column; optional{' '}
-          <code className="bg-gray-100 px-1 rounded">skill</code> (2.0–5.0),{' '}
-          <code className="bg-gray-100 px-1 rounded">basketball</code> (1–5), and{' '}
-          <code className="bg-gray-100 px-1 rounded">email</code> columns.
+          <span className="font-medium">File → Save As → CSV</span>). A sign-up export works as-is:
+          the first row must be a header with either a{' '}
+          <code className="bg-gray-100 px-1 rounded">name</code> column or{' '}
+          <code className="bg-gray-100 px-1 rounded">first name</code> +{' '}
+          <code className="bg-gray-100 px-1 rounded">last name</code>. Skill, email, and
+          &ldquo;who is your teammate?&rdquo; columns are picked up automatically, and you get to
+          review everything before anything is saved.
         </p>
 
+        {openTournaments.length > 0 && (
+          <div className="mb-4">
+            <label htmlFor="import-tournament" className="block text-xs font-medium text-gray-600 mb-1">
+              Also register them in
+            </label>
+            <select
+              id="import-tournament"
+              value={importTournament}
+              onChange={e => {
+                setImportTournament(e.target.value);
+                setPendingImport(null);
+              }}
+              className="w-full sm:w-auto border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+            >
+              <option value="">Roster only — don&apos;t register anyone</option>
+              {openTournaments.map(t => (
+                <option key={t.id} value={t.id}>
+                  {t.name} ({t.event_type})
+                </option>
+              ))}
+            </select>
+            <p className="text-gray-400 text-xs mt-1">
+              Doubles events are entered as teams, using the teammate each player named.
+            </p>
+          </div>
+        )}
+
         <label className="inline-flex items-center gap-2 bg-brand-700 hover:bg-brand-600 text-white text-sm font-medium px-4 py-2 rounded-lg cursor-pointer transition-colors">
-          {importing ? 'Importing…' : '📄 Choose CSV file'}
+          {importing && !pendingImport ? 'Reading…' : '📄 Choose CSV file'}
           <input
             type="file"
             accept=".csv,text/csv"
@@ -361,6 +451,85 @@ export default function AdminDashboard({
             className="hidden"
           />
         </label>
+
+        {pendingImport && (
+          <div className="mt-4 border border-brand-100 rounded-xl p-4 bg-brand-50/40">
+            <p className="text-sm font-medium text-gray-800">
+              {pendingImport.preview.players.length} player
+              {pendingImport.preview.players.length === 1 ? '' : 's'} in {pendingImport.fileName}
+            </p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {pendingImport.preview.new_players} new,{' '}
+              {pendingImport.preview.players.length - pendingImport.preview.new_players} already on the roster
+              {pendingImport.preview.tournament &&
+                ` · ${pendingImport.preview.tournament.entries} entries into ${pendingImport.preview.tournament.name} (${pendingImport.preview.tournament.seats_left} seats left)`}
+            </p>
+
+            {pendingImport.preview.teams.length > 0 && (
+              <div className="mt-3">
+                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                  Teams ({pendingImport.preview.teams.length})
+                </p>
+                <ul className="space-y-0.5 max-h-64 overflow-y-auto">
+                  {pendingImport.preview.teams.map(t => (
+                    <li key={t.players.join('|')} className="text-sm text-gray-700 flex items-center gap-2">
+                      <span className="flex-1 truncate">
+                        {t.players[0]} &amp; {t.players[1]}
+                      </span>
+                      <span
+                        className={`text-[11px] px-1.5 py-0.5 rounded ${
+                          t.reason === 'random'
+                            ? 'bg-amber-100 text-amber-800'
+                            : 'bg-gray-100 text-gray-600'
+                        }`}
+                      >
+                        {PAIR_REASON_LABELS[t.reason]}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {pendingImport.preview.unpaired.length > 0 && (
+              <p className="text-sm text-amber-800 mt-3">
+                No partner: {pendingImport.preview.unpaired.join(', ')}
+              </p>
+            )}
+
+            {(pendingImport.preview.warnings.length > 0 || pendingImport.preview.errors.length > 0) && (
+              <div className="mt-3">
+                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                  Worth a look
+                </p>
+                <ul className="list-disc list-inside space-y-0.5 max-h-40 overflow-y-auto">
+                  {[...pendingImport.preview.warnings, ...pendingImport.preview.errors].map(w => (
+                    <li key={w} className="text-xs text-gray-600">{w}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="flex items-center gap-2 mt-4">
+              <button
+                type="button"
+                onClick={handleConfirmImport}
+                disabled={importing}
+                className="bg-brand-700 hover:bg-brand-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
+              >
+                {importing ? 'Importing…' : 'Import'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setPendingImport(null)}
+                disabled={importing}
+                className="text-gray-600 hover:text-gray-800 text-sm font-medium px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
 
         {importMsg && <p className="text-brand-700 text-sm mt-3">{importMsg}</p>}
       </div>

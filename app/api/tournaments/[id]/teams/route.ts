@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient, createClient } from '@/lib/supabase/server';
+import { pairBySkill } from '@/lib/pairing';
 
 // Admin team management for doubles: pair two registered players into one team,
-// or split a team back into individual entries. Used for the "admin builds the
-// teams" flow (players sign up solo, the organizer pairs them).
+// split a team back into individual entries, or pair every solo entry at once
+// by rating. Used for the "admin builds the teams" flow (players sign up solo,
+// the organizer pairs them).
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -38,7 +40,62 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { action, registrationId } = body as { action: 'pair' | 'unpair'; registrationId: string };
+    const { action, registrationId } = body as {
+      action: 'pair' | 'unpair' | 'randomize';
+      registrationId: string;
+    };
+
+    // Pair up everyone who is still solo, closest ratings together, so the
+    // made-up teams are as evenly matched against each other as possible.
+    if (action === 'randomize') {
+      const { data: solo } = await supabase
+        .from('tournament_registrations')
+        .select('id, player_id, seed, profiles:player_id(display_name, skill_level)')
+        .eq('tournament_id', id)
+        .is('partner_id', null);
+
+      type SoloEntry = {
+        id: string;
+        player_id: string;
+        seed: number | null;
+        profiles: { display_name: string; skill_level: number | null } | null;
+      };
+      const entries = (solo ?? []) as unknown as SoloEntry[];
+
+      if (entries.length < 2) {
+        return NextResponse.json(
+          { error: 'There are not two solo players to pair.' },
+          { status: 400 }
+        );
+      }
+
+      const { pairs, leftover } = pairBySkill(
+        entries,
+        e => e.profiles?.skill_level ?? 3.0,
+        e => e.profiles?.display_name ?? ''
+      );
+
+      // Each new team keeps the first entry (and its seed); the partner's own
+      // entry goes away so the pair counts as a single team in the bracket.
+      for (const [a, b] of pairs) {
+        const { error } = await supabase
+          .from('tournament_registrations')
+          .update({ partner_id: b.player_id })
+          .eq('id', a.id);
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+        await supabase.from('tournament_registrations').delete().eq('id', b.id);
+      }
+
+      return NextResponse.json({
+        paired: pairs.length,
+        teams: pairs.map(([a, b]) => [
+          a.profiles?.display_name ?? '',
+          b.profiles?.display_name ?? '',
+        ]),
+        leftover: leftover?.profiles?.display_name ?? null,
+      });
+    }
 
     if (!registrationId) {
       return NextResponse.json({ error: 'Missing registration' }, { status: 400 });
