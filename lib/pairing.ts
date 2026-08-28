@@ -160,12 +160,32 @@ export function resolvePartner(
   return { player: best.player };
 }
 
+// Pair a pool of players off by rating, closest ratings together, so the
+// randomly-made teams are as evenly matched against each other as possible.
+// Shared by the CSV import and the "randomize pairs" button on a tournament.
+// The odd one out (when the pool is odd) comes back as `leftover`.
+export function pairBySkill<T>(
+  pool: T[],
+  skillOf: (item: T) => number,
+  nameOf: (item: T) => string
+): { pairs: [T, T][]; leftover: T | null } {
+  const sorted = [...pool].sort(
+    (a, b) => skillOf(b) - skillOf(a) || nameOf(a).localeCompare(nameOf(b))
+  );
+
+  const pairs: [T, T][] = [];
+  for (let i = 0; i + 1 < sorted.length; i += 2) {
+    pairs.push([sorted[i], sorted[i + 1]]);
+  }
+
+  return { pairs, leftover: sorted.length % 2 === 1 ? sorted[sorted.length - 1] : null };
+}
+
 // Build doubles teams from an imported roster.
 //
 // Priority: teammates who named each other, then one-sided requests, then
-// people who were signed up in the same registration, then a skill-balanced
-// shuffle for whoever is left (strongest with weakest, so the random teams
-// come out roughly even).
+// people who were signed up in the same registration, then a rating-based
+// pairing for whoever is left (see pairBySkill).
 export function pairPlayers(players: ParsedPlayer[]): PairingResult {
   const warnings: string[] = [];
   const teams: PairedTeam[] = [];
@@ -222,18 +242,13 @@ export function pairPlayers(players: ParsedPlayer[]): PairingResult {
     }
   }
 
-  // 5. Balanced random pairing for the rest.
-  const pool = players
-    .filter(p => !teammate.has(p))
-    .sort((a, b) => b.skill_level - a.skill_level || a.display_name.localeCompare(b.display_name));
-
-  let lo = 0;
-  let hi = pool.length - 1;
-  while (lo < hi) {
-    pair(pool[lo], pool[hi], 'random');
-    lo++;
-    hi--;
-  }
+  // 5. Pair the rest up by rating.
+  const { pairs } = pairBySkill(
+    players.filter(p => !teammate.has(p)),
+    p => p.skill_level,
+    p => p.display_name
+  );
+  pairs.forEach(([a, b]) => pair(a, b, 'random'));
 
   // 6. Report every request we couldn't honour, now that the teams are final.
   const landedWith = (p: ParsedPlayer) => {

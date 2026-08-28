@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { pairPlayers, resolvePartner } from './pairing';
+import { pairBySkill, pairPlayers, resolvePartner } from './pairing';
 import type { ParsedPlayer } from './csv';
 
 let row = 1;
@@ -71,6 +71,38 @@ describe('resolvePartner', () => {
   });
 });
 
+describe('pairBySkill', () => {
+  const pool = [
+    { name: 'Ann', skill: 2.5 },
+    { name: 'Bob', skill: 5.0 },
+    { name: 'Cal', skill: 3.0 },
+    { name: 'Dot', skill: 4.5 },
+    { name: 'Eve', skill: 2.0 },
+  ];
+
+  it('puts the closest ratings together and hands back the odd one out', () => {
+    const { pairs, leftover } = pairBySkill(pool, p => p.skill, p => p.name);
+    expect(pairs.map(([a, b]) => `${a.name}+${b.name}`)).toEqual(['Bob+Dot', 'Cal+Ann']);
+    expect(leftover?.name).toBe('Eve');
+  });
+
+  it('leaves nothing over for an even pool, and does not touch the input', () => {
+    const even = pool.slice(0, 4);
+    const { pairs, leftover } = pairBySkill(even, p => p.skill, p => p.name);
+    expect(pairs).toHaveLength(2);
+    expect(leftover).toBeNull();
+    expect(even.map(p => p.name)).toEqual(['Ann', 'Bob', 'Cal', 'Dot']);
+  });
+
+  it('breaks ties on the same rating by name, so the result is repeatable', () => {
+    const tied = [{ name: 'Zoe', skill: 3 }, { name: 'Amy', skill: 3 }];
+    expect(pairBySkill(tied, p => p.skill, p => p.name).pairs[0].map(p => p.name)).toEqual([
+      'Amy',
+      'Zoe',
+    ]);
+  });
+});
+
 describe('pairPlayers', () => {
   it('pairs people who named each other first', () => {
     const chase = mk('Chase Mobbs', { partner_hint: 'Cooper Mobbs' });
@@ -99,16 +131,16 @@ describe('pairPlayers', () => {
     expect(result.teams.every(t => t.reason === 'random')).toBe(true);
   });
 
-  it('balances the leftovers, strongest with weakest', () => {
+  it('pairs the leftovers with the closest rating to them', () => {
     const players = [
       mk('Top Player', { skill_level: 5.0, wants_random_partner: true }),
-      mk('Mid One', { skill_level: 3.0, wants_random_partner: true }),
-      mk('Mid Two', { skill_level: 3.0, wants_random_partner: true }),
+      mk('High Player', { skill_level: 4.5, wants_random_partner: true }),
+      mk('Mid Player', { skill_level: 3.0, wants_random_partner: true }),
       mk('Low Player', { skill_level: 2.0, wants_random_partner: true }),
     ];
     expect(names(pairPlayers(players))).toEqual([
-      'random: Top Player + Low Player',
-      'random: Mid One + Mid Two',
+      'random: Top Player + High Player',
+      'random: Mid Player + Low Player',
     ]);
   });
 
@@ -118,11 +150,11 @@ describe('pairPlayers', () => {
     const isaac = mk('Isaac Elam', { skill_level: 2.0 });
     const result = pairPlayers([ryan, mandy, isaac]);
 
-    expect(result.unpaired.map(p => p.display_name)).toEqual(['Mandy Hewitt']);
+    expect(result.unpaired.map(p => p.display_name)).toEqual(['Isaac Elam']);
     expect(result.warnings).toContain(
-      'Ryan McAnulty listed “Rodney Miller” as a teammate — no one in the file matches that name; paired with Isaac Elam instead.'
+      'Ryan McAnulty listed “Rodney Miller” as a teammate — no one in the file matches that name; paired with Mandy Hewitt instead.'
     );
-    expect(result.warnings).toContain('Mandy Hewitt has no partner — the head count is odd.');
+    expect(result.warnings).toContain('Isaac Elam has no partner — the head count is odd.');
   });
 
   it('explains a request for someone who is already taken', () => {
@@ -133,6 +165,7 @@ describe('pairPlayers', () => {
     const result = pairPlayers([a, b, c, d]);
 
     expect(names(result)).toEqual(['mutual: Bea Bee + Cy Cat', 'random: Ann Ant + Dee Dog']);
+
     expect(result.warnings).toContain(
       'Ann Ant asked for Bea Bee, who is teamed with Cy Cat; paired with Dee Dog instead.'
     );

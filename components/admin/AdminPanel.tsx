@@ -43,6 +43,7 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
   const sport = tournament.sport;
 
   const [generating, setGenerating] = useState(false);
+  const [randomizing, setRandomizing] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [pendingPartner, setPendingPartner] = useState<Record<string, string>>({});
@@ -228,6 +229,41 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
     setSeeds(newSeeds);
   };
 
+  // Pair every solo entry at once, closest ratings together.
+  const handleRandomizePairs = async () => {
+    if (
+      !confirm(
+        `Pair the ${unpairedCount} solo players by rating? Players with similar ratings ` +
+          'end up on the same team. You can still unpair anyone afterwards.'
+      )
+    ) {
+      return;
+    }
+    setRandomizing(true);
+    setError('');
+    setSuccess('');
+
+    const res = await fetch(`/api/tournaments/${id}/teams`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'randomize' }),
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      setSuccess(
+        `Made ${data.paired} team${data.paired === 1 ? '' : 's'}` +
+          (data.leftover
+            ? ` — ${data.leftover} is still solo, there was an odd number of players.`
+            : '.')
+      );
+      router.refresh();
+    } else {
+      setError(data.error || 'Failed to pair players');
+    }
+    setRandomizing(false);
+  };
+
   const teamAction = async (body: Record<string, string>) => {
     setError('');
     setSuccess('');
@@ -292,9 +328,20 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
         )}
 
         {isDoubles && !isBracketGenerated && unpairedCount > 0 && (
-          <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl px-4 py-2.5 mb-4 text-sm">
-            {unpairedCount} {unpairedCount === 1 ? 'entry needs' : 'entries need'} a partner before you can
-            generate the bracket. Pair them below.
+          <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl px-4 py-2.5 mb-4 text-sm flex flex-wrap items-center justify-between gap-3">
+            <span className="flex-1 min-w-[14rem]">
+              {unpairedCount} {unpairedCount === 1 ? 'entry needs' : 'entries need'} a partner before you can
+              generate the bracket. Pair them below{unpairedCount > 1 ? ', or pair them all by rating' : ''}.
+            </span>
+            {unpairedCount > 1 && (
+              <button
+                onClick={handleRandomizePairs}
+                disabled={randomizing}
+                className="text-sm bg-amber-700 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+              >
+                {randomizing ? 'Pairing…' : '🎲 Randomize pairs'}
+              </button>
+            )}
           </div>
         )}
 
