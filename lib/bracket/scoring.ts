@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { syncCourtAssignments } from './courts';
 
 type MatchRow = {
   id: string;
@@ -161,4 +162,8 @@ export async function recordMatchResult(
       .update({ status: 'completed' })
       .eq('id', match.tournament_id);
   }
+
+  // Roll the court queue forward: this match has freed its court, and whatever
+  // it just made playable downstream is ready to be given one.
+  await syncCourtAssignments(supabase, match.tournament_id);
 }

@@ -43,6 +43,9 @@ export interface Tournament {
   event_type: EventType;
   status: TournamentStatus;
   max_players: number;
+  // How many courts the event runs on. Playable matches are handed a court
+  // number from 1..court_count so players know where to go.
+  court_count: number;
   start_date: string | null;
   location: string | null;
   created_by: string;
@@ -98,6 +101,9 @@ export interface Match {
   loser_next_match_id: string | null;
   winner_next_slot: 1 | 2 | null;
   loser_next_slot: 1 | 2 | null;
+  // Court this match is played on (1..tournament.court_count), or null while
+  // it's still waiting for a court to free up.
+  court: number | null;
   created_at: string;
   player1?: BracketEntry;
   player2?: BracketEntry;
@@ -237,6 +243,10 @@ export const TEAM_SIZE: Record<EventType, number> = {
   '4v4': 4,
   '5v5': 5,
 };
+
+// Courts an organizer can pick from when setting up a tournament.
+export const MIN_COURTS = 1;
+export const MAX_COURTS = 32;
 
 export function isSport(value: unknown): value is Sport {
   return value === 'pickleball' || value === 'basketball';

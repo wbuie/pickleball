@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { SPORT_EVENT_TYPES, isSport } from '@/lib/types/app';
+import { SPORT_EVENT_TYPES, isSport, MIN_COURTS, MAX_COURTS } from '@/lib/types/app';
 import type { Sport, EventType } from '@/lib/types/app';
 
 export async function POST(request: NextRequest) {
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, description, sport, format, event_type, max_players, start_date, location } = body;
+    const { name, description, sport, format, event_type, max_players, court_count, start_date, location } = body;
 
     if (!name || !format) {
       return NextResponse.json({ error: 'Name and format are required' }, { status: 400 });
@@ -41,6 +41,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Courts are optional (older clients don't send them) but must be sane.
+    const courts = court_count === undefined || court_count === null ? 1 : court_count;
+    if (!Number.isInteger(courts) || courts < MIN_COURTS || courts > MAX_COURTS) {
+      return NextResponse.json(
+        { error: `Courts must be between ${MIN_COURTS} and ${MAX_COURTS}` },
+        { status: 400 }
+      );
+    }
+
     const { data, error } = await supabase
       .from('tournaments')
       .insert({
@@ -50,6 +59,7 @@ export async function POST(request: NextRequest) {
         format,
         event_type: chosenEvent,
         max_players: max_players || 16,
+        court_count: courts,
         start_date: start_date || null,
         location: location || null,
         created_by: user.id,

@@ -5,16 +5,49 @@ import type { Match, BracketEntry } from '@/lib/types/app';
 
 interface ScoreModalProps {
   match: Match & { player1?: BracketEntry; player2?: BracketEntry };
+  // How many courts this tournament runs on, so the court can be reassigned.
+  courtCount: number;
   onClose: () => void;
+  // Called after a change that the page needs to re-read (a court move).
+  onChange?: () => void;
   onSuccess: () => void;
 }
 
-export default function ScoreModal({ match, onClose, onSuccess }: ScoreModalProps) {
+export default function ScoreModal({ match, courtCount, onClose, onChange, onSuccess }: ScoreModalProps) {
   const isEdit = match.status === 'completed';
   const [p1Score, setP1Score] = useState(match.player1_score?.toString() ?? '');
   const [p2Score, setP2Score] = useState(match.player2_score?.toString() ?? '');
+  const [movingCourt, setMovingCourt] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // The court shown is always the saved one — a move round-trips to the server
+  // and comes back through onChange, so the modal can't drift from reality.
+  const court = match.court ?? null;
+
+  // Courts are handed out automatically, but an organizer sometimes needs to
+  // move a match — a court is wet, a game before it is running long.
+  const handleCourtChange = async (value: string) => {
+    const next = value === '' ? null : parseInt(value);
+    setMovingCourt(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/matches/${match.id}/court`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ court: next }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to move the match');
+      }
+      onChange?.();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong');
+    } finally {
+      setMovingCourt(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,6 +96,7 @@ export default function ScoreModal({ match, onClose, onSuccess }: ScoreModalProp
             {match.bracket_type === 'losers' && `LB Round ${match.round}`}
             {match.bracket_type === 'grand_finals' && match.round === 1 && 'Grand Final'}
             {match.bracket_type === 'grand_finals' && match.round === 2 && 'Grand Final – Reset'}
+            {court !== null && ` · Court ${court}`}
           </p>
         </div>
 
@@ -107,6 +141,28 @@ export default function ScoreModal({ match, onClose, onSuccess }: ScoreModalProp
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-center text-xl font-bold focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
               required
             />
+          </div>
+
+          <div>
+            <label htmlFor="match-court" className="block text-sm font-medium text-gray-700 mb-1">
+              Court
+            </label>
+            <select
+              id="match-court"
+              value={court ?? ''}
+              disabled={movingCourt}
+              onChange={e => handleCourtChange(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent disabled:opacity-50"
+            >
+              <option value="">Assign automatically</option>
+              {Array.from({ length: courtCount }, (_, i) => i + 1).map(n => (
+                <option key={n} value={n}>Court {n}</option>
+              ))}
+            </select>
+            <p className="text-xs text-gray-400 mt-1">
+              Saved right away. Moving a match here bumps whoever was on that court back into the
+              queue; &ldquo;automatically&rdquo; hands it the next court that frees up.
+            </p>
           </div>
 
           {error && (

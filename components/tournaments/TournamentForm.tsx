@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { EventType, Sport, TournamentFormat } from '@/lib/types/app';
-import { SPORT_EVENT_TYPES, SPORT_LABELS, EVENT_LABELS } from '@/lib/types/app';
+import { SPORT_EVENT_TYPES, SPORT_LABELS, EVENT_LABELS, MIN_COURTS, MAX_COURTS } from '@/lib/types/app';
 
 export interface TournamentFormValues {
   name: string;
@@ -12,6 +12,7 @@ export interface TournamentFormValues {
   format: TournamentFormat;
   event_type: EventType;
   max_players: number;
+  court_count: number;
   start_date: string | null;
   location: string | null;
 }
@@ -75,13 +76,22 @@ export default function TournamentForm({
     setError('');
 
     const form = new FormData(e.currentTarget);
+    // Locked fields are rendered disabled, so the browser leaves them out of the
+    // form data entirely — send them only when they're actually editable, rather
+    // than shipping nulls the API would reject.
+    const structural = structuralLocked
+      ? {}
+      : {
+          sport: form.get('sport'),
+          format: form.get('format'),
+          event_type: form.get('event_type'),
+          max_players: parseInt(form.get('max_players') as string),
+        };
     const data = {
       name: form.get('name'),
       description: form.get('description'),
-      sport: form.get('sport'),
-      format: form.get('format'),
-      event_type: form.get('event_type'),
-      max_players: parseInt(form.get('max_players') as string),
+      ...structural,
+      court_count: parseInt(form.get('court_count') as string) || 1,
       start_date: form.get('start_date') || null,
       location: form.get('location') || null,
     };
@@ -154,7 +164,7 @@ export default function TournamentForm({
           {structuralLocked && (
             <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
               The bracket has been generated, so the sport, event, format, and size are locked. You can
-              still update the name, description, date, and location.
+              still update the name, description, date, location, and number of courts.
             </p>
           )}
 
@@ -236,6 +246,27 @@ export default function TournamentForm({
               </select>
               <p className="text-xs text-gray-400 mt-1">Players for singles, teams for doubles</p>
             </div>
+          </div>
+
+          <div>
+            <label htmlFor="t-court-count" className="block text-sm font-medium text-gray-700 mb-1">
+              Courts <span className="text-red-500">*</span>
+            </label>
+            <input
+              id="t-court-count"
+              name="court_count"
+              type="number"
+              min={MIN_COURTS}
+              max={MAX_COURTS}
+              step={1}
+              required
+              defaultValue={initial?.court_count ?? 1}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              How many courts you&rsquo;ll play on. Matches are handed a court number as they come up,
+              so everyone knows where to go — change this any time if courts open up or go away.
+            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

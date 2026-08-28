@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import BracketViewer from '@/components/bracket/BracketViewer';
+import CourtBoard from '@/components/tournaments/CourtBoard';
 import RegisterButton from '@/components/tournaments/RegisterButton';
 import { StatusBadge, SkillBadge, BasketballBadge } from '@/components/ui/Badge';
 import { FORMAT_LABELS, STATUS_LABELS, EVENT_LABELS, SPORT_LABELS, entryName, entrySkill, entryPlayers, entryNoun as entryNounFor, isRosterEvent, isTeamEvent } from '@/lib/types/app';
@@ -78,6 +79,7 @@ export default async function TournamentPage({
   const isTeam = isTeamEvent(tournament.event_type as EventType);
   const entryNoun = entryNounFor(tournament.event_type as EventType);
   const sport = tournament.sport as Sport;
+  const courtCount = tournament.court_count ?? 1;
 
   const myEntry = user
     ? registrations.find(
@@ -158,6 +160,9 @@ export default async function TournamentPage({
               <span>
                 👥 {registrations.length} / {tournament.max_players} {entryNoun.toLowerCase()}
               </span>
+              <span>
+                🏟️ {courtCount} court{courtCount === 1 ? '' : 's'}
+              </span>
             </div>
           </div>
 
@@ -199,6 +204,14 @@ export default async function TournamentPage({
         </div>
       </div>
 
+      {/* Where to play: one tile per court, plus who's waiting */}
+      <CourtBoard
+        matches={(matches || []) as Match[]}
+        entries={new Map(entries.map(e => [e.id, e]))}
+        courtCount={courtCount}
+        highlightEntryId={myEntry?.id}
+      />
+
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Bracket */}
         <div className="lg:col-span-3 bg-white rounded-2xl shadow-sm border border-brand-100 p-6">
@@ -209,6 +222,7 @@ export default async function TournamentPage({
             players={entries}
             format={tournament.format as 'single_elimination' | 'double_elimination'}
             isAdmin={profile?.is_admin ?? false}
+            courtCount={courtCount}
             highlightEntryId={myEntry?.id}
           />
         </div>

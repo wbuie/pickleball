@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient, createClient } from '@/lib/supabase/server';
 import { generateSingleEliminationBracket } from '@/lib/bracket/singleElimination';
 import { generateDoubleEliminationBracket } from '@/lib/bracket/doubleElimination';
+import { syncCourtAssignments } from '@/lib/bracket/courts';
 import { isRosterEvent } from '@/lib/types/app';
 
 export async function POST(
@@ -145,6 +146,9 @@ export async function POST(
       await supabase.from('tournaments').update({ status: 'registration' }).eq('id', id);
       throw genErr;
     }
+
+    // Hand out courts to the matches that are ready to play right away.
+    await syncCourtAssignments(supabase, id);
 
     return NextResponse.json({ success: true });
   } catch (err) {

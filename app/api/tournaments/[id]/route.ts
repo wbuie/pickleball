@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { SPORT_EVENT_TYPES, isSport, isRosterEvent } from '@/lib/types/app';
+import { createAdminClient, createClient } from '@/lib/supabase/server';
+import { syncCourtAssignments } from '@/lib/bracket/courts';
+import { SPORT_EVENT_TYPES, isSport, isRosterEvent, MIN_COURTS, MAX_COURTS } from '@/lib/types/app';
 
 // Edit an existing tournament. Name/description/date/location are always
-// editable; the event type, format, and size can only change before the bracket
-// is generated (afterwards they'd invalidate the matches).
+// editable, as is the number of courts (they can change on the day); the event
+// type, format, and size can only change before the bracket is generated
+// (afterwards they'd invalidate the matches).
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -27,13 +29,22 @@ export async function PATCH(
 
     const { data: current } = await supabase
       .from('tournaments')
-      .select('status, sport, format, event_type, max_players')
+      .select('status, sport, format, event_type, max_players, court_count')
       .eq('id', id)
       .single();
     if (!current) return NextResponse.json({ error: 'Tournament not found' }, { status: 404 });
 
     const body = await request.json();
-    const { name, description, sport, format, event_type, max_players, start_date, location } = body;
+    const { name, description, court_count, start_date, location } = body;
+    // A structural field the client couldn't edit comes through as null (or is
+    // absent) — either way it means "leave this alone", not "set it to null".
+    // description/start_date/location are different: null clears them.
+    const omitNull = <T,>(value: T | null | undefined): T | undefined =>
+      value === null ? undefined : value;
+    const sport = omitNull(body.sport);
+    const format = omitNull(body.format);
+    const event_type = omitNull(body.event_type);
+    const max_players = omitNull(body.max_players);
 
     if (name !== undefined && (!name || !`${name}`.trim())) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
@@ -51,7 +62,20 @@ export async function PATCH(
       return NextResponse.json({ error: 'Invalid format' }, { status: 400 });
     }
 
+    // Courts aren't structural — an organizer can gain or lose one mid-event,
+    // and the assignments below just re-flow onto what's left.
+    const changingCourts = court_count !== undefined && court_count !== current.court_count;
+    if (changingCourts) {
+      if (!Number.isInteger(court_count) || court_count < MIN_COURTS || court_count > MAX_COURTS) {
+        return NextResponse.json(
+          { error: `Courts must be between ${MIN_COURTS} and ${MAX_COURTS}` },
+          { status: 400 }
+        );
+      }
+    }
+
     const updates: Record<string, unknown> = {};
+    if (changingCourts) updates.court_count = court_count;
     if (name !== undefined) updates.name = `${name}`.trim();
     if (description !== undefined) updates.description = description || null;
     if (start_date !== undefined) updates.start_date = start_date || null;
@@ -138,6 +162,11 @@ export async function PATCH(
           .update({ team_name: null })
           .eq('tournament_id', id);
       }
+    }
+
+    // Re-flow court assignments onto the new number of courts.
+    if (changingCourts) {
+      await syncCourtAssignments(await createAdminClient(), id);
     }
 
     return NextResponse.json({ tournament: data });
