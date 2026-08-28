@@ -88,8 +88,19 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
       pairedPlayers.add(r.partner_id);
     }
   });
-  const candidatesFor = (reg: TournamentRegistration) =>
-    members.filter(m => m.id !== reg.player_id && !pairedPlayers.has(m.id));
+  // Everyone still available to partner this entry, closest rating first, so
+  // pairing by hand is a matter of taking the name at the top.
+  const candidatesFor = (reg: TournamentRegistration) => {
+    const target = entrySkill(reg, sport);
+    return members
+      .filter(m => m.id !== reg.player_id && !pairedPlayers.has(m.id))
+      .map(m => ({ ...m, rating: m.skill_level ?? 3.0 }))
+      .sort(
+        (a, b) =>
+          Math.abs(a.rating - target) - Math.abs(b.rating - target) ||
+          a.display_name.localeCompare(b.display_name)
+      );
+  };
 
   const handleAddPlayer = async () => {
     if (!playerToAdd) return;
@@ -411,9 +422,11 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
                             onChange={e => setPendingPartner(prev => ({ ...prev, [reg.id]: e.target.value }))}
                             className="flex-1 sm:flex-none border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
                           >
-                            <option value="">Pair with…</option>
+                            <option value="">Pair with… (closest rating first)</option>
                             {candidatesFor(reg).map(m => (
-                              <option key={m.id} value={m.id}>{m.display_name}</option>
+                              <option key={m.id} value={m.id}>
+                                {m.display_name} · {m.rating.toFixed(1)}
+                              </option>
                             ))}
                           </select>
                           <button

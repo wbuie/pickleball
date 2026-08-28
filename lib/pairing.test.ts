@@ -171,6 +171,54 @@ describe('pairPlayers', () => {
     );
   });
 
+  it('in mutual mode, only pairs the people who named each other', () => {
+    const players = [
+      mk('Chase Mobbs', { partner_hint: 'Cooper Mobbs' }),
+      mk('Cooper Mobbs', { partner_hint: 'Chase Mobbs' }),
+      mk('Jon Elam', { partner_hint: 'Dennis Schauer' }),
+      mk('Dennis Schauer'),
+      mk('Jenni Baxter', { group_id: '99' }),
+      mk('Ben Baxter', { group_id: '99' }),
+    ];
+    const result = pairPlayers(players, 'mutual');
+
+    expect(names(result)).toEqual(['mutual: Chase Mobbs + Cooper Mobbs']);
+    expect(result.unpaired.map(p => p.display_name)).toEqual([
+      'Jon Elam',
+      'Dennis Schauer',
+      'Jenni Baxter',
+      'Ben Baxter',
+    ]);
+    // Being left to pair by hand is the point of this mode, so the only thing
+    // worth saying is that Jon's request went unanswered.
+    expect(result.warnings).toEqual([
+      'Jon Elam named Dennis Schauer as a teammate, but Dennis Schauer didn\'t name them back — both left to pair by hand.',
+    ]);
+  });
+
+  it('in named mode, honours one-sided requests but not a shared registration', () => {
+    const players = [
+      mk('Jon Elam', { partner_hint: 'Dennis Schauer' }),
+      mk('Dennis Schauer'),
+      mk('Jenni Baxter', { group_id: '99' }),
+      mk('Ben Baxter', { group_id: '99' }),
+    ];
+    const result = pairPlayers(players, 'named');
+
+    expect(names(result)).toEqual(['requested: Jon Elam + Dennis Schauer']);
+    expect(result.unpaired.map(p => p.display_name)).toEqual(['Jenni Baxter', 'Ben Baxter']);
+  });
+
+  it('still reports a teammate who never registered, in every mode', () => {
+    const players = [
+      mk('Ryan McAnulty', { partner_hint: 'Rodney Miller' }),
+      mk('Someone Else'),
+    ];
+    for (const mode of ['mutual', 'named', 'all'] as const) {
+      expect(pairPlayers(players, mode).warnings[0]).toContain('no one in the file matches');
+    }
+  });
+
   it('never puts one player on two teams', () => {
     const players = [
       mk('A One', { partner_hint: 'B Two' }),
