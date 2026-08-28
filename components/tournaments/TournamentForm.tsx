@@ -358,7 +358,8 @@ export default function TournamentForm({
               </div>
               <p className="text-xs text-gray-400 mt-2">
                 The code points at the tournament page, so it keeps working as the event moves from
-                sign-ups to live scores — print it once.
+                sign-ups to live scores — print it once. The print view also has PNG and SVG
+                downloads for flyers and slides.
               </p>
             </div>
           </div>

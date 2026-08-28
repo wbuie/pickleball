@@ -2,7 +2,11 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
-import TournamentQrCode, { CopyLinkButton, PrintButton } from '@/components/tournaments/TournamentQrCode';
+import TournamentQrCode, {
+  CopyLinkButton,
+  PrintButton,
+  QrDownloadButtons,
+} from '@/components/tournaments/TournamentQrCode';
 import { absoluteUrl } from '@/lib/url.server';
 import { displayUrl } from '@/lib/url';
 import { EVENT_LABELS, FORMAT_LABELS, SPORT_LABELS } from '@/lib/types/app';
@@ -27,6 +31,9 @@ export async function generateMetadata({
     robots: { index: false, follow: false },
   };
 }
+
+const secondaryButton =
+  'border border-gray-300 text-gray-700 text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors';
 
 /**
  * A printable sign for a tournament: the QR code players scan, with the
@@ -59,11 +66,9 @@ export default async function TournamentQrPage({
         <Link href={`/tournaments/${id}/edit`} className="text-brand-600 text-sm hover:underline">
           ← Back to tournament settings
         </Link>
-        <div className="flex gap-2">
-          <CopyLinkButton
-            url={url}
-            className="border border-gray-300 text-gray-700 text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors"
-          />
+        <div className="flex flex-wrap gap-2">
+          <CopyLinkButton url={url} className={secondaryButton} />
+          <QrDownloadButtons url={url} baseName={tournament.name} className={secondaryButton} />
           <PrintButton className="bg-brand-700 hover:bg-brand-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors" />
         </div>
       </div>
@@ -119,7 +124,8 @@ export default async function TournamentQrPage({
 
       <p className="mt-4 text-center text-xs text-gray-400 print:hidden">
         Tip: print this on a full sheet and tape it up at the check-in table. The link keeps working
-        for the whole tournament — the same code covers sign-ups, brackets, and live scores.
+        for the whole tournament — the same code covers sign-ups, brackets, and live scores. Download
+        the bare code to drop it into a flyer, a slide, or a bulletin.
       </p>
     </div>
   );
