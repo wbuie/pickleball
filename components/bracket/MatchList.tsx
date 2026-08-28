@@ -92,6 +92,7 @@ function MatchRow({
   const involvesYou =
     Boolean(highlightEntryId) &&
     (match.player1_id === highlightEntryId || match.player2_id === highlightEntryId);
+  const court = match.court ?? null;
 
   if (isBye) {
     const byePlayer = match.player1 || match.player2;
@@ -149,14 +150,24 @@ function MatchRow({
             : 'bg-gray-50 border-gray-100 text-gray-500'
         }`}
       >
-        <span className="inline-flex items-center gap-1.5">
-          {isLive && (
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
+        <span className="inline-flex items-center gap-2">
+          <span className="inline-flex items-center gap-1.5">
+            {isLive && (
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
+              </span>
+            )}
+            {isCompleted ? 'Final' : isLive ? 'Live' : bothPlayers ? 'Upcoming' : 'Awaiting players'}
+          </span>
+          {court !== null && (
+            <span className="inline-flex items-center rounded-full border border-brand-200 bg-white px-2 py-0.5 text-[11px] font-bold text-brand-700">
+              Court {court}
             </span>
           )}
-          {isCompleted ? 'Final' : isLive ? 'Live' : bothPlayers ? 'Upcoming' : 'Awaiting players'}
+          {court === null && !isCompleted && bothPlayers && (
+            <span className="text-gray-400">on deck</span>
+          )}
         </span>
         {isClickable && (
           <span className="text-accent-700">{isCompleted ? 'Edit score' : 'Enter score'}</span>
@@ -233,7 +244,8 @@ export default function MatchList({
   const matchesQuery = (m: EnrichedMatch) =>
     !q ||
     m.player1?.display_name.toLowerCase().includes(q) ||
-    m.player2?.display_name.toLowerCase().includes(q);
+    m.player2?.display_name.toLowerCase().includes(q) ||
+    (m.court != null && `court ${m.court}`.includes(q));
 
   const filtered = sections
     .map(s => ({
@@ -262,8 +274,8 @@ export default function MatchList({
           type="text"
           value={query}
           onChange={e => setQuery(e.target.value)}
-          placeholder="Find your name…"
-          aria-label="Filter matches by player name"
+          placeholder="Find your name or court…"
+          aria-label="Filter matches by player name or court"
           className="w-full rounded-xl border border-gray-300 bg-white pl-9 pr-9 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
         />
         {query && (

@@ -15,6 +15,7 @@ A tournament hosting web app for **Christ Fellowship Church, Birmingham**. Built
 - **Per-sport ratings** — Players carry a pickleball DUPR rating (2.0–5.0) and a separate basketball tier (1–5). Brackets seed by the rating for that tournament's sport
 - **Admins by email** — Organizers grant admin access by email from the League Admin page; a matching account is promoted immediately, and unregistered emails are auto-granted admin when they sign up
 - **Auto-Seeding** — Seeded automatically by skill level; admins can override
+- **Courts** — An organizer says how many courts the event runs on, and every match that's ready to play is handed a court number. Courts recycle themselves: entering a score frees that court for the next match in line, and players see an "On the courts" board (plus a "You're up on Court 3" callout) on the tournament page. Court count can change mid-event, and an admin can move any match to a specific court
 - **Live Scoring** — Admins enter scores; winners advance automatically through the bracket, and the bracket updates in real time for spectators (Supabase Realtime) without refreshing
 - **Editable Results** — Admins can correct a completed match; if the result hasn't already cascaded into a played match, the change re-propagates automatically
 - **Visual Brackets** — Clean horizontal bracket visualization for both formats
@@ -59,6 +60,7 @@ npm install
    - `006_basketball.sql` — multi-sport support: `sport` column, 3v3/4v4/5v5 event types, team names, and team rosters (`registration_members`)
    - `007_admin_email_allowlist.sql` — `admin_emails` allowlist so organizers can grant admin by email (promotes existing accounts and auto-grants on signup)
    - `008_basketball_rating.sql` — per-player `basketball_skill_level` (1–5 tiers) used to seed basketball tournaments
+   - `009_courts.sql` — courts: `tournaments.court_count` and `matches.court`, so matches get a court number players can look up
 
 ### 3. Configure Environment Variables
 
@@ -108,12 +110,13 @@ npm test
 
 ## Tournament Flow
 
-1. **Admin** creates a tournament (single or double elimination, max players, date)
+1. **Admin** creates a tournament (single or double elimination, max players, courts, date)
 2. **Players** register via the tournament page
 3. **Admin** opens the Admin Panel → optionally adjusts seeding → clicks **Generate Bracket**
 4. Seeds 1–N are assigned by DUPR rating (highest = seed 1); byes go to top seeds
-5. **Admin** clicks any ready match → enters scores → winner advances automatically
-6. Double elimination: losers drop to the Losers Bracket; Grand Finals can have a Reset match
+5. Every match that's ready to play is given a court (1…court count); the rest wait in line
+6. **Admin** clicks any ready match → enters scores → winner advances automatically, and the court passes to the next match
+7. Double elimination: losers drop to the Losers Bracket; Grand Finals can have a Reset match
 
 ---
 
@@ -133,6 +136,7 @@ app/
     tournaments/[id]/bracket/generate/route.ts  # Generate bracket
     tournaments/[id]/seed/route.ts       # Update seeds
     matches/[matchId]/score/route.ts     # Enter match score
+    matches/[matchId]/court/route.ts     # Move a match to a specific court
   auth/
     login/page.tsx
     register/page.tsx
@@ -145,6 +149,7 @@ components/
   bracket/DoubleEliminationBracket.tsx
   bracket/MatchCard.tsx
   admin/ScoreModal.tsx
+  tournaments/CourtBoard.tsx         # "Where do I play?" — one tile per court
   tournaments/TournamentCard.tsx
   tournaments/RegisterButton.tsx
   auth/LoginForm.tsx
@@ -158,6 +163,7 @@ lib/
     utils.ts                   # nextPowerOf2, getSeedOrder, grouping
     singleElimination.ts       # SE bracket generation
     doubleElimination.ts       # DE bracket generation
+    courts.ts                  # Court assignment + recycling
     scoring.ts                 # Score recording + winner advancement
   types/app.ts
 ```

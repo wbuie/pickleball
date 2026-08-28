@@ -87,6 +87,7 @@ describe('groupMatchesByBracketAndRound', () => {
       loser_next_match_id: null,
       winner_next_slot: null,
       loser_next_slot: null,
+      court: null,
       created_at: '',
       ...over,
     });

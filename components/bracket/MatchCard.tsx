@@ -65,6 +65,7 @@ export default function MatchCard({ match, isAdmin, onScoreClick, compact = fals
 
   const p1IsWinner = isCompleted && match.winner_id === match.player1_id;
   const p2IsWinner = isCompleted && match.winner_id === match.player2_id;
+  const court = match.court ?? null;
 
   if (isBye) {
     const byePlayer = match.player1 || match.player2;
@@ -103,6 +104,13 @@ export default function MatchCard({ match, isAdmin, onScoreClick, compact = fals
       }`}
       onClick={() => isClickable && onScoreClick?.(match.id)}
     >
+      {court !== null && (
+        <div className="bg-brand-50 border-b border-brand-100 px-2.5 py-0.5">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-brand-700">
+            Court {court}
+          </span>
+        </div>
+      )}
       <PlayerRow
         player={match.player1}
         score={match.player1_score}

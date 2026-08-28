@@ -15,6 +15,8 @@ import {
   entryNoun as entryNounFor,
   isRosterEvent,
   TEAM_SIZE,
+  MIN_COURTS,
+  MAX_COURTS,
 } from '@/lib/types/app';
 
 interface MemberOption {
@@ -50,6 +52,8 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
     registrations.forEach(r => { d[r.id] = r.team_name ?? ''; });
     return d;
   });
+  const [courtDraft, setCourtDraft] = useState(String(tournament.court_count ?? 1));
+  const [savingCourts, setSavingCourts] = useState(false);
   const [playerToAdd, setPlayerToAdd] = useState('');
   const [newTeamName, setNewTeamName] = useState('');
   const [addingPlayer, setAddingPlayer] = useState(false);
@@ -154,6 +158,32 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
       const data = await res.json();
       setError(data.error || 'Failed to rename team');
     }
+  };
+
+  // Courts can change on the day — a court gets rained out, another opens up.
+  // Saving re-flows the assignments across whatever is left.
+  const handleSaveCourts = async () => {
+    const courts = parseInt(courtDraft);
+    if (!Number.isInteger(courts) || courts < MIN_COURTS || courts > MAX_COURTS) {
+      setError(`Courts must be between ${MIN_COURTS} and ${MAX_COURTS}`);
+      return;
+    }
+    setSavingCourts(true);
+    setError('');
+    setSuccess('');
+    const res = await fetch(`/api/tournaments/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ court_count: courts }),
+    });
+    if (res.ok) {
+      setSuccess(`Now running on ${courts} court${courts === 1 ? '' : 's'}.`);
+      router.refresh();
+    } else {
+      const data = await res.json();
+      setError(data.error || 'Failed to update courts');
+    }
+    setSavingCourts(false);
   };
 
   const handleSaveSeeds = async () => {
@@ -501,6 +531,37 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
         )}
       </div>
 
+      {/* Courts */}
+      <div className="bg-white rounded-2xl shadow-sm border border-brand-100 p-6 mb-6">
+        <h2 className="text-lg font-bold text-gray-900 mb-1">Courts</h2>
+        <p className="text-sm text-gray-500 mb-4">
+          Matches are handed a court number as they become ready, and a court is passed on to the next
+          match the moment a score is entered. Players see their court on the tournament page.
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <label htmlFor="court-count" className="text-sm text-gray-600">
+            Courts in play
+          </label>
+          <input
+            id="court-count"
+            type="number"
+            min={MIN_COURTS}
+            max={MAX_COURTS}
+            step={1}
+            value={courtDraft}
+            onChange={e => setCourtDraft(e.target.value)}
+            className="w-20 border border-gray-300 rounded-lg px-3 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-brand-500"
+          />
+          <button
+            onClick={handleSaveCourts}
+            disabled={savingCourts || courtDraft === String(tournament.court_count ?? 1)}
+            className="bg-white border border-brand-300 text-brand-700 text-sm font-medium px-4 py-2 rounded-lg hover:bg-brand-50 transition-colors disabled:opacity-50"
+          >
+            {savingCourts ? 'Saving…' : 'Update courts'}
+          </button>
+        </div>
+      </div>
+
       {/* Tournament Info */}
       <div className="bg-white rounded-2xl shadow-sm border border-brand-100 p-6">
         <h2 className="text-lg font-bold text-gray-900 mb-4">Tournament Info</h2>
@@ -524,6 +585,10 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
           <div className="flex gap-2">
             <dt className="text-gray-500 w-32">Max {entryNoun}</dt>
             <dd className="font-medium text-gray-800">{tournament.max_players}</dd>
+          </div>
+          <div className="flex gap-2">
+            <dt className="text-gray-500 w-32">Courts</dt>
+            <dd className="font-medium text-gray-800">{tournament.court_count ?? 1}</dd>
           </div>
           {tournament.start_date && (
             <div className="flex gap-2">

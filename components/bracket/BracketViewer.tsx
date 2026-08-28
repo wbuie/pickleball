@@ -15,6 +15,8 @@ interface BracketViewerProps {
   players: BracketEntry[];
   format: TournamentFormat;
   isAdmin?: boolean;
+  // How many courts the tournament runs on, so an admin can move a match.
+  courtCount: number;
   // Registration id of the signed-in viewer's entry, if any — used by the list
   // view to mark and pre-filter to "your" matches.
   highlightEntryId?: string;
@@ -38,7 +40,7 @@ function useMediaQuery(query: string): boolean {
   );
 }
 
-export default function BracketViewer({ tournamentId, matches, players, format, isAdmin, highlightEntryId }: BracketViewerProps) {
+export default function BracketViewer({ tournamentId, matches, players, format, isAdmin, courtCount, highlightEntryId }: BracketViewerProps) {
   const router = useRouter();
   const [scoringMatchId, setScoringMatchId] = useState<string | null>(null);
 
@@ -153,7 +155,9 @@ export default function BracketViewer({ tournamentId, matches, players, format, 
             player1: scoringMatch.player1_id ? playerMap.get(scoringMatch.player1_id) : undefined,
             player2: scoringMatch.player2_id ? playerMap.get(scoringMatch.player2_id) : undefined,
           }}
+          courtCount={courtCount}
           onClose={() => setScoringMatchId(null)}
+          onChange={() => router.refresh()}
           onSuccess={() => {
             setScoringMatchId(null);
             router.refresh();
