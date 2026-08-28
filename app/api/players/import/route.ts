@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { csvToPlayers, normalizeName, type ParsedPlayer } from '@/lib/csv';
-import { pairPlayers, type PairReason } from '@/lib/pairing';
+import { pairPlayers, type PairingMode, type PairReason } from '@/lib/pairing';
 
 // Bulk-create managed (roster-only) players from CSV text, and optionally drop
 // them straight into a tournament as doubles teams. Admin only.
 //
 // The client reads the uploaded .csv file as text and posts
-// { csv, preview?, tournament_id? }. With preview: true nothing is written —
-// the response describes exactly what a real import would do, so the organizer
-// can check the teammate matching before committing.
+// { csv, preview?, tournament_id?, pairing_mode? }. With preview: true nothing
+// is written — the response describes exactly what a real import would do, so
+// the organizer can check the teammate matching before committing.
+//
+// pairing_mode decides how much of the pairing to do here rather than by hand
+// on the tournament page; anyone left unpaired is registered as a solo entry.
 
 interface PreviewPlayer {
   display_name: string;
@@ -49,6 +52,11 @@ export async function POST(request: NextRequest) {
     const preview: boolean = body.preview === true;
     const tournamentId: string | null = (body.tournament_id ?? '').trim() || null;
 
+    const PAIRING_MODES: PairingMode[] = ['mutual', 'named', 'all'];
+    const pairingMode: PairingMode = PAIRING_MODES.includes(body.pairing_mode)
+      ? body.pairing_mode
+      : 'named';
+
     const { players, errors } = csvToPlayers(body.csv);
 
     if (players.length === 0) {
@@ -81,7 +89,7 @@ export async function POST(request: NextRequest) {
     // ------------------------------------------------------------------
     // Work out the teams the file describes.
     // ------------------------------------------------------------------
-    const pairing = pairPlayers(players);
+    const pairing = pairPlayers(players, pairingMode);
     const warnings = [...pairing.warnings];
 
     let tournament: {
@@ -146,6 +154,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         preview: true,
+        pairing_mode: pairingMode,
         players: previewPlayers,
         new_players: toCreate.length,
         teams: previewTeams,

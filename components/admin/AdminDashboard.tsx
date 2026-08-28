@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { SkillBadge, BasketballBadge } from '@/components/ui/Badge';
 import { SKILL_LEVELS, BASKETBALL_SKILL_LEVELS } from '@/lib/types/app';
+import type { PairingMode } from '@/lib/pairing';
 import type { AdminEmail, AppSettings, EventType, Profile } from '@/lib/types/app';
 
 // Tournaments still taking sign-ups, so an import can go straight into one.
@@ -40,8 +41,16 @@ const PAIR_REASON_LABELS: Record<ImportPreview['teams'][number]['reason'], strin
   mutual: 'named each other',
   requested: 'named as teammate',
   registration: 'signed up together',
-  random: 'randomly paired',
+  random: 'paired by rating',
 };
+
+// How much of the pairing the import should do. Anyone it leaves alone comes in
+// as a solo entry, to be paired on the tournament page where ratings are shown.
+const PAIRING_MODE_OPTIONS: { value: PairingMode; label: string }[] = [
+  { value: 'named', label: 'Whenever either one named the other' },
+  { value: 'mutual', label: 'Only when they named each other' },
+  { value: 'all', label: 'Everything — also sign-ups together, then by rating' },
+];
 
 export default function AdminDashboard({
   settings,
@@ -64,6 +73,7 @@ export default function AdminDashboard({
   const [importing, setImporting] = useState(false);
   const [importMsg, setImportMsg] = useState('');
   const [importTournament, setImportTournament] = useState('');
+  const [pairingMode, setPairingMode] = useState<PairingMode>('named');
   // The uploaded file, held until the organizer approves the preview.
   const [pendingImport, setPendingImport] = useState<
     { csv: string; fileName: string; preview: ImportPreview } | null
@@ -151,7 +161,12 @@ export default function AdminDashboard({
       const res = await fetch('/api/players/import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ csv: text, preview: true, tournament_id: importTournament }),
+        body: JSON.stringify({
+          csv: text,
+          preview: true,
+          tournament_id: importTournament,
+          pairing_mode: pairingMode,
+        }),
       });
       const data = await res.json();
 
@@ -177,7 +192,11 @@ export default function AdminDashboard({
     const res = await fetch('/api/players/import', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ csv: pendingImport.csv, tournament_id: importTournament }),
+      body: JSON.stringify({
+        csv: pendingImport.csv,
+        tournament_id: importTournament,
+        pairing_mode: pairingMode,
+      }),
     });
     const data = await res.json();
 
@@ -438,6 +457,27 @@ export default function AdminDashboard({
             <p className="text-gray-400 text-xs mt-1">
               Doubles events are entered as teams, using the teammate each player named.
             </p>
+
+            <label htmlFor="import-pairing" className="block text-xs font-medium text-gray-600 mb-1 mt-3">
+              Pair them up
+            </label>
+            <select
+              id="import-pairing"
+              value={pairingMode}
+              onChange={e => {
+                setPairingMode(e.target.value as PairingMode);
+                setPendingImport(null);
+              }}
+              className="w-full sm:w-auto border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+            >
+              {PAIRING_MODE_OPTIONS.map(o => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+            <p className="text-gray-400 text-xs mt-1">
+              Everyone else comes in solo, with their rating, so you can pair them on the
+              tournament page whenever you like.
+            </p>
           </div>
         )}
 
@@ -492,9 +532,14 @@ export default function AdminDashboard({
             )}
 
             {pendingImport.preview.unpaired.length > 0 && (
-              <p className="text-sm text-amber-800 mt-3">
-                No partner: {pendingImport.preview.unpaired.join(', ')}
-              </p>
+              <div className="mt-3">
+                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                  Solo — pair later ({pendingImport.preview.unpaired.length})
+                </p>
+                <p className="text-sm text-gray-700">
+                  {pendingImport.preview.unpaired.join(', ')}
+                </p>
+              </div>
             )}
 
             {(pendingImport.preview.warnings.length > 0 || pendingImport.preview.errors.length > 0) && (

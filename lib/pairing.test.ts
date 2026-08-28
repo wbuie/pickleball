@@ -107,7 +107,7 @@ describe('pairPlayers', () => {
   it('pairs people who named each other first', () => {
     const chase = mk('Chase Mobbs', { partner_hint: 'Cooper Mobbs' });
     const cooper = mk('Cooper Mobbs', { partner_hint: 'Chase Mobbs' });
-    const result = pairPlayers([chase, cooper]);
+    const result = pairPlayers([chase, cooper], 'all');
     expect(names(result)).toEqual(['mutual: Chase Mobbs + Cooper Mobbs']);
     expect(result.warnings).toEqual([]);
   });
@@ -115,18 +115,18 @@ describe('pairPlayers', () => {
   it('honours a one-sided request', () => {
     const jon = mk('Jon Elam', { partner_hint: 'Dennis Schauer' });
     const dennis = mk('Dennis Schauer');
-    expect(names(pairPlayers([jon, dennis]))).toEqual(['requested: Jon Elam + Dennis Schauer']);
+    expect(names(pairPlayers([jon, dennis], 'all'))).toEqual(['requested: Jon Elam + Dennis Schauer']);
   });
 
   it('pairs two people who signed up in the same registration', () => {
     const a = mk('Jenni Baxter', { group_id: '99' });
     const b = mk('Ben Baxter', { group_id: '99' });
-    expect(names(pairPlayers([a, b]))).toEqual(['registration: Jenni Baxter + Ben Baxter']);
+    expect(names(pairPlayers([a, b], 'all'))).toEqual(['registration: Jenni Baxter + Ben Baxter']);
   });
 
   it('leaves a registration of three for the organizer', () => {
     const group = ['A One', 'B Two', 'C Three'].map(n => mk(n, { group_id: '7' }));
-    const result = pairPlayers(group);
+    const result = pairPlayers(group, 'all');
     expect(result.warnings.some(w => w.includes('3 people'))).toBe(true);
     expect(result.teams.every(t => t.reason === 'random')).toBe(true);
   });
@@ -138,7 +138,7 @@ describe('pairPlayers', () => {
       mk('Mid Player', { skill_level: 3.0, wants_random_partner: true }),
       mk('Low Player', { skill_level: 2.0, wants_random_partner: true }),
     ];
-    expect(names(pairPlayers(players))).toEqual([
+    expect(names(pairPlayers(players, 'all'))).toEqual([
       'random: Top Player + High Player',
       'random: Mid Player + Low Player',
     ]);
@@ -148,7 +148,7 @@ describe('pairPlayers', () => {
     const ryan = mk('Ryan McAnulty', { skill_level: 4.0, partner_hint: 'Rodney Miller' });
     const mandy = mk('Mandy Hewitt', { skill_level: 3.0, wants_random_partner: true });
     const isaac = mk('Isaac Elam', { skill_level: 2.0 });
-    const result = pairPlayers([ryan, mandy, isaac]);
+    const result = pairPlayers([ryan, mandy, isaac], 'all');
 
     expect(result.unpaired.map(p => p.display_name)).toEqual(['Isaac Elam']);
     expect(result.warnings).toContain(
@@ -162,13 +162,61 @@ describe('pairPlayers', () => {
     const b = mk('Bea Bee', { partner_hint: 'Cy Cat' });
     const c = mk('Cy Cat', { partner_hint: 'Bea Bee' });
     const d = mk('Dee Dog');
-    const result = pairPlayers([a, b, c, d]);
+    const result = pairPlayers([a, b, c, d], 'all');
 
     expect(names(result)).toEqual(['mutual: Bea Bee + Cy Cat', 'random: Ann Ant + Dee Dog']);
 
     expect(result.warnings).toContain(
       'Ann Ant asked for Bea Bee, who is teamed with Cy Cat; paired with Dee Dog instead.'
     );
+  });
+
+  it('in mutual mode, only pairs the people who named each other', () => {
+    const players = [
+      mk('Chase Mobbs', { partner_hint: 'Cooper Mobbs' }),
+      mk('Cooper Mobbs', { partner_hint: 'Chase Mobbs' }),
+      mk('Jon Elam', { partner_hint: 'Dennis Schauer' }),
+      mk('Dennis Schauer'),
+      mk('Jenni Baxter', { group_id: '99' }),
+      mk('Ben Baxter', { group_id: '99' }),
+    ];
+    const result = pairPlayers(players, 'mutual');
+
+    expect(names(result)).toEqual(['mutual: Chase Mobbs + Cooper Mobbs']);
+    expect(result.unpaired.map(p => p.display_name)).toEqual([
+      'Jon Elam',
+      'Dennis Schauer',
+      'Jenni Baxter',
+      'Ben Baxter',
+    ]);
+    // Being left to pair by hand is the point of this mode, so the only thing
+    // worth saying is that Jon's request went unanswered.
+    expect(result.warnings).toEqual([
+      'Jon Elam named Dennis Schauer as a teammate, but Dennis Schauer didn\'t name them back — both left to pair by hand.',
+    ]);
+  });
+
+  it('in named mode, honours one-sided requests but not a shared registration', () => {
+    const players = [
+      mk('Jon Elam', { partner_hint: 'Dennis Schauer' }),
+      mk('Dennis Schauer'),
+      mk('Jenni Baxter', { group_id: '99' }),
+      mk('Ben Baxter', { group_id: '99' }),
+    ];
+    const result = pairPlayers(players, 'named');
+
+    expect(names(result)).toEqual(['requested: Jon Elam + Dennis Schauer']);
+    expect(result.unpaired.map(p => p.display_name)).toEqual(['Jenni Baxter', 'Ben Baxter']);
+  });
+
+  it('still reports a teammate who never registered, in every mode', () => {
+    const players = [
+      mk('Ryan McAnulty', { partner_hint: 'Rodney Miller' }),
+      mk('Someone Else'),
+    ];
+    for (const mode of ['mutual', 'named', 'all'] as const) {
+      expect(pairPlayers(players, mode).warnings[0]).toContain('no one in the file matches');
+    }
   });
 
   it('never puts one player on two teams', () => {
@@ -181,7 +229,7 @@ describe('pairPlayers', () => {
       mk('F Six'),
       mk('G Seven'),
     ];
-    const result = pairPlayers(players);
+    const result = pairPlayers(players, 'all');
     const seen = result.teams.flatMap(t => t.players.map(p => p.display_name));
     expect(new Set(seen).size).toBe(seen.length);
     expect(seen.length + result.unpaired.length).toBe(players.length);

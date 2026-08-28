@@ -10,6 +10,15 @@ import { normalizeName, type ParsedPlayer } from './csv';
 
 export type PairReason = 'mutual' | 'requested' | 'registration' | 'random';
 
+// How much pairing an import should do for you.
+//   mutual — only the pairs who named each other. Everyone else arrives as a
+//            solo entry to be paired by hand on the tournament page.
+//   named  — the above, plus one-sided requests (someone named a teammate who
+//            didn't answer the question).
+//   all    — the above, plus people signed up in the same registration, plus a
+//            rating-based pairing for whoever is still left.
+export type PairingMode = 'mutual' | 'named' | 'all';
+
 export interface PairedTeam {
   players: [ParsedPlayer, ParsedPlayer];
   reason: PairReason;
@@ -17,7 +26,8 @@ export interface PairedTeam {
 
 export interface PairingResult {
   teams: PairedTeam[];
-  // Players left without a partner (an odd head count).
+  // Players with no partner. In 'all' mode that's only an odd head count; in
+  // the narrower modes it's everyone the file didn't explicitly pair up.
   unpaired: ParsedPlayer[];
   // Things an organizer should eyeball before committing the import.
   warnings: string[];
@@ -185,8 +195,10 @@ export function pairBySkill<T>(
 //
 // Priority: teammates who named each other, then one-sided requests, then
 // people who were signed up in the same registration, then a rating-based
-// pairing for whoever is left (see pairBySkill).
-export function pairPlayers(players: ParsedPlayer[]): PairingResult {
+// pairing for whoever is left (see pairBySkill). `mode` decides how far down
+// that list to go — everything past it is left for the organizer, and is
+// deliberately not defaulted here so every caller states its intent.
+export function pairPlayers(players: ParsedPlayer[], mode: PairingMode): PairingResult {
   const warnings: string[] = [];
   const teams: PairedTeam[] = [];
   const teammate = new Map<ParsedPlayer, ParsedPlayer>();
@@ -217,17 +229,19 @@ export function pairPlayers(players: ParsedPlayer[]): PairingResult {
 
   // 3. One-sided requests: the named partner didn't fill the question in (or
   //    named someone else entirely).
-  for (const p of players) {
-    const q = requested.get(p);
-    if (!q || teammate.has(p) || teammate.has(q)) continue;
-    pair(p, q, 'requested');
+  if (mode !== 'mutual') {
+    for (const p of players) {
+      const q = requested.get(p);
+      if (!q || teammate.has(p) || teammate.has(q)) continue;
+      pair(p, q, 'requested');
+    }
   }
 
   // 4. Signed up in the same submission and still unattached — almost always a
   //    couple or a parent registering both halves of the team.
   const groups = new Map<string, ParsedPlayer[]>();
   for (const p of players) {
-    if (!p.group_id) continue;
+    if (!p.group_id || mode !== 'all') continue;
     groups.set(p.group_id, [...(groups.get(p.group_id) ?? []), p]);
   }
   for (const [groupId, members] of groups) {
@@ -243,17 +257,19 @@ export function pairPlayers(players: ParsedPlayer[]): PairingResult {
   }
 
   // 5. Pair the rest up by rating.
-  const { pairs } = pairBySkill(
-    players.filter(p => !teammate.has(p)),
-    p => p.skill_level,
-    p => p.display_name
-  );
-  pairs.forEach(([a, b]) => pair(a, b, 'random'));
+  if (mode === 'all') {
+    const { pairs } = pairBySkill(
+      players.filter(p => !teammate.has(p)),
+      p => p.skill_level,
+      p => p.display_name
+    );
+    pairs.forEach(([a, b]) => pair(a, b, 'random'));
+  }
 
   // 6. Report every request we couldn't honour, now that the teams are final.
   const landedWith = (p: ParsedPlayer) => {
     const mate = teammate.get(p);
-    return mate ? `paired with ${mate.display_name} instead` : 'left without a partner';
+    return mate ? `paired with ${mate.display_name} instead` : 'left to pair by hand';
   };
 
   for (const { player: p, note } of unresolved) {
@@ -265,16 +281,30 @@ export function pairPlayers(players: ParsedPlayer[]): PairingResult {
   for (const [p, q] of requested) {
     if (teammate.get(p) === q) continue;
     const qMate = teammate.get(q);
-    warnings.push(
-      qMate
-        ? `${p.display_name} asked for ${q.display_name}, who is teamed with ${qMate.display_name}; ${landedWith(p)}.`
-        : `${p.display_name} asked for ${q.display_name} but was already teamed up; ${landedWith(p)}.`
-    );
+    const pMate = teammate.get(p);
+    if (qMate) {
+      warnings.push(
+        `${p.display_name} asked for ${q.display_name}, who is teamed with ${qMate.display_name}; ${landedWith(p)}.`
+      );
+    } else if (pMate) {
+      warnings.push(
+        `${p.display_name} asked for ${q.display_name}, but was already teamed with ${pMate.display_name}.`
+      );
+    } else {
+      // Only reachable in 'mutual' mode: a request nobody returned.
+      warnings.push(
+        `${p.display_name} named ${q.display_name} as a teammate, but ${q.display_name} didn't name them back — both left to pair by hand.`
+      );
+    }
   }
 
   const unpaired = players.filter(p => !teammate.has(p));
-  for (const p of unpaired) {
-    warnings.push(`${p.display_name} has no partner — the head count is odd.`);
+  // In the narrower modes an unpaired player is the expected outcome, not
+  // something to flag; only an odd head count after a full pass is.
+  if (mode === 'all') {
+    for (const p of unpaired) {
+      warnings.push(`${p.display_name} has no partner — the head count is odd.`);
+    }
   }
 
   return { teams, unpaired, warnings };
