@@ -16,6 +16,7 @@ A tournament hosting web app for **Christ Fellowship Church, Birmingham**. Built
 - **Admins by email** — Organizers grant admin access by email from the League Admin page; a matching account is promoted immediately, and unregistered emails are auto-granted admin when they sign up
 - **Auto-Seeding** — Seeded automatically by skill level; admins can override
 - **Courts** — An organizer says how many courts the event runs on, and every match that's ready to play is handed a court number. Courts recycle themselves: entering a score frees that court for the next match in line, and players see an "On the courts" board (plus a "You're up on Court 3" callout) on the tournament page. Court count can change mid-event, and an admin can move any match to a specific court
+- **Printable QR sign** — Every tournament gets a QR code pointing at its page. Organizers find it on the tournament's edit screen and can print a full-sheet sign (name, date, location, big code) to tape up at the check-in table, or download the bare code as PNG/SVG for a flyer or slide. The same code carries the event from sign-ups through live scores
 - **Live Scoring** — Admins enter scores; winners advance automatically through the bracket, and the bracket updates in real time for spectators (Supabase Realtime) without refreshing
 - **Editable Results** — Admins can correct a completed match; if the result hasn't already cascaded into a played match, the change re-propagates automatically
 - **Visual Brackets** — Clean horizontal bracket visualization for both formats
@@ -130,6 +131,7 @@ app/
     new/page.tsx              # Create tournament (admin)
     [id]/page.tsx             # Tournament detail + bracket
     [id]/admin/page.tsx       # Admin panel (seed, generate, score)
+    [id]/qr/page.tsx          # Printable QR sign for the tournament
   api/
     tournaments/route.ts      # POST create tournament
     tournaments/[id]/register/route.ts   # Register/withdraw
@@ -150,6 +152,7 @@ components/
   bracket/MatchCard.tsx
   admin/ScoreModal.tsx
   tournaments/CourtBoard.tsx         # "Where do I play?" — one tile per court
+  tournaments/TournamentQrCode.tsx   # QR code + copy/print/download controls
   tournaments/TournamentCard.tsx
   tournaments/RegisterButton.tsx
   auth/LoginForm.tsx
@@ -166,4 +169,12 @@ lib/
     courts.ts                  # Court assignment + recycling
     scoring.ts                 # Score recording + winner advancement
   types/app.ts
+  url.ts                # displayUrl (client-safe)
+  url.server.ts         # absoluteUrl — builds the shareable link from the request
 ```
+
+### Optional environment variables
+
+| Variable | Purpose |
+| --- | --- |
+| `NEXT_PUBLIC_SITE_URL` | Pins the canonical origin used for QR codes and share links. Leave it unset to derive the origin from each request (correct on localhost, previews, and production alike); set it when a proxy rewrites the `Host` header, or to make preview deploys point at production. |

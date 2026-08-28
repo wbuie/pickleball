@@ -77,3 +77,18 @@ h2 {
   border-top: 2px solid #aedde6;
   border-top-right-radius: 4px;
 }
+
+/* ============================================================
+   PRINT
+   Printable pages (the tournament QR sign) mark their own
+   furniture `print:hidden`; these rules handle the page itself.
+   ============================================================ */
+@page {
+  margin: 0.5in;
+}
+
+@media print {
+  body {
+    background: #fff;
+  }
+}
