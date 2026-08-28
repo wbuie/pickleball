@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     const PAIRING_MODES: PairingMode[] = ['mutual', 'named', 'all'];
     const pairingMode: PairingMode = PAIRING_MODES.includes(body.pairing_mode)
       ? body.pairing_mode
-      : 'mutual';
+      : 'named';
 
     const { players, errors } = csvToPlayers(body.csv);
 

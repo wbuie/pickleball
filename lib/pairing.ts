@@ -196,11 +196,9 @@ export function pairBySkill<T>(
 // Priority: teammates who named each other, then one-sided requests, then
 // people who were signed up in the same registration, then a rating-based
 // pairing for whoever is left (see pairBySkill). `mode` decides how far down
-// that list to go — everything past it is left for the organizer.
-export function pairPlayers(
-  players: ParsedPlayer[],
-  mode: PairingMode = 'all'
-): PairingResult {
+// that list to go — everything past it is left for the organizer, and is
+// deliberately not defaulted here so every caller states its intent.
+export function pairPlayers(players: ParsedPlayer[], mode: PairingMode): PairingResult {
   const warnings: string[] = [];
   const teams: PairedTeam[] = [];
   const teammate = new Map<ParsedPlayer, ParsedPlayer>();

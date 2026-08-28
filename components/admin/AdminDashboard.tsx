@@ -47,9 +47,9 @@ const PAIR_REASON_LABELS: Record<ImportPreview['teams'][number]['reason'], strin
 // How much of the pairing the import should do. Anyone it leaves alone comes in
 // as a solo entry, to be paired on the tournament page where ratings are shown.
 const PAIRING_MODE_OPTIONS: { value: PairingMode; label: string }[] = [
-  { value: 'mutual', label: 'Only pairs who named each other' },
-  { value: 'named', label: 'Anyone who named a teammate' },
-  { value: 'all', label: 'Everyone — fill the rest in by rating' },
+  { value: 'named', label: 'Whenever either one named the other' },
+  { value: 'mutual', label: 'Only when they named each other' },
+  { value: 'all', label: 'Everything — also sign-ups together, then by rating' },
 ];
 
 export default function AdminDashboard({
@@ -73,7 +73,7 @@ export default function AdminDashboard({
   const [importing, setImporting] = useState(false);
   const [importMsg, setImportMsg] = useState('');
   const [importTournament, setImportTournament] = useState('');
-  const [pairingMode, setPairingMode] = useState<PairingMode>('mutual');
+  const [pairingMode, setPairingMode] = useState<PairingMode>('named');
   // The uploaded file, held until the organizer approves the preview.
   const [pendingImport, setPendingImport] = useState<
     { csv: string; fileName: string; preview: ImportPreview } | null
