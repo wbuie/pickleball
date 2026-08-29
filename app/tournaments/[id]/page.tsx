@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 import BracketViewer from '@/components/bracket/BracketViewer';
 import CourtBoard from '@/components/tournaments/CourtBoard';
 import RegisterButton from '@/components/tournaments/RegisterButton';
+import TournamentRules from '@/components/tournaments/TournamentRules';
 import { StatusBadge, SkillBadge, BasketballBadge } from '@/components/ui/Badge';
 import { FORMAT_LABELS, STATUS_LABELS, EVENT_LABELS, SPORT_LABELS, entryName, entrySkill, entryPlayers, entryNoun as entryNounFor, isRosterEvent, isTeamEvent } from '@/lib/types/app';
 import type { Match, Profile, BracketEntry, TournamentRegistration, EventType, Sport } from '@/lib/types/app';
@@ -203,6 +204,13 @@ export default async function TournamentPage({
           </div>
         </div>
       </div>
+
+      {/* House rules for this event, as posted by the organizer */}
+      <TournamentRules
+        rules={tournament.rules ?? null}
+        tournamentId={id}
+        isAdmin={profile?.is_admin ?? false}
+      />
 
       {/* Where to play: one tile per court, plus who's waiting */}
       <CourtBoard

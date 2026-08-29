@@ -3,7 +3,7 @@ import { createAdminClient, createClient } from '@/lib/supabase/server';
 import { syncCourtAssignments } from '@/lib/bracket/courts';
 import { SPORT_EVENT_TYPES, isSport, isRosterEvent, MIN_COURTS, MAX_COURTS } from '@/lib/types/app';
 
-// Edit an existing tournament. Name/description/date/location are always
+// Edit an existing tournament. Name/description/rules/date/location are always
 // editable, as is the number of courts (they can change on the day); the event
 // type, format, and size can only change before the bracket is generated
 // (afterwards they'd invalidate the matches).
@@ -35,10 +35,10 @@ export async function PATCH(
     if (!current) return NextResponse.json({ error: 'Tournament not found' }, { status: 404 });
 
     const body = await request.json();
-    const { name, description, court_count, start_date, location } = body;
+    const { name, description, rules, court_count, start_date, location } = body;
     // A structural field the client couldn't edit comes through as null (or is
     // absent) — either way it means "leave this alone", not "set it to null".
-    // description/start_date/location are different: null clears them.
+    // description/rules/start_date/location are different: null clears them.
     const omitNull = <T,>(value: T | null | undefined): T | undefined =>
       value === null ? undefined : value;
     const sport = omitNull(body.sport);
@@ -78,6 +78,7 @@ export async function PATCH(
     if (changingCourts) updates.court_count = court_count;
     if (name !== undefined) updates.name = `${name}`.trim();
     if (description !== undefined) updates.description = description || null;
+    if (rules !== undefined) updates.rules = typeof rules === 'string' && rules.trim() ? rules.trim() : null;
     if (start_date !== undefined) updates.start_date = start_date || null;
     if (location !== undefined) updates.location = location || null;
 

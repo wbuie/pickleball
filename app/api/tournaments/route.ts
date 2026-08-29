@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, description, sport, format, event_type, max_players, court_count, start_date, location } = body;
+    const { name, description, rules, sport, format, event_type, max_players, court_count, start_date, location } = body;
 
     if (!name || !format) {
       return NextResponse.json({ error: 'Name and format are required' }, { status: 400 });
@@ -55,6 +55,7 @@ export async function POST(request: NextRequest) {
       .insert({
         name,
         description: description || null,
+        rules: typeof rules === 'string' && rules.trim() ? rules.trim() : null,
         sport: chosenSport,
         format,
         event_type: chosenEvent,
