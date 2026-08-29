@@ -1,13 +1,21 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import ScoreModal from '@/components/admin/ScoreModal';
 import type { BracketEntry, Match } from '@/lib/types/app';
 import { isPlayable } from '@/lib/bracket/courts';
 
 interface CourtBoardProps {
   matches: Match[];
-  entries: Map<string, BracketEntry>;
+  entries: BracketEntry[];
   courtCount: number;
   // Registration id of the signed-in viewer's entry, so we can tell them where
   // to go rather than making them hunt for their name.
   highlightEntryId?: string;
+  // Organizers score matches straight off the board — it's the screen they're
+  // already looking at while games finish.
+  isAdmin?: boolean;
 }
 
 function roundLabel(match: Match): string {
@@ -16,6 +24,12 @@ function roundLabel(match: Match): string {
   }
   const prefix = match.bracket_type === 'winners' ? 'Winners' : 'Losers';
   return `${prefix} · Round ${match.round}`;
+}
+
+function sideNames(match: Match, entries: Map<string, BracketEntry>): string[] {
+  return [match.player1_id, match.player2_id].map(entryId =>
+    entryId ? entries.get(entryId)?.display_name ?? 'TBD' : 'TBD'
+  );
 }
 
 // The two sides of a match, one per line, with the viewer's own entry called out.
@@ -52,13 +66,21 @@ function Matchup({
  * The "where do I go?" board: one tile per court showing the match on it, plus
  * the matches waiting for a court to open up. Courts are assigned automatically
  * as matches become ready, so this is always the live picture.
+ *
+ * For an admin every match on the board is also a score entry point — tapping
+ * a court (or a waiting match) opens the same modal the bracket uses.
  */
 export default function CourtBoard({
   matches,
-  entries,
+  entries: entryList,
   courtCount,
   highlightEntryId,
+  isAdmin,
 }: CourtBoardProps) {
+  const router = useRouter();
+  const [scoringMatchId, setScoringMatchId] = useState<string | null>(null);
+
+  const entries = new Map(entryList.map(e => [e.id, e]));
   const live = matches.filter(isPlayable);
   const onCourt = new Map<number, Match>();
   for (const match of live) {
@@ -76,6 +98,13 @@ export default function CourtBoard({
 
   const courts = Array.from({ length: courtCount }, (_, i) => i + 1);
 
+  // A match leaves the board the moment it's scored, so the modal always opens
+  // fresh — but keep it mounted off a lookup so a stale id can't crash the page.
+  const scoringMatch = scoringMatchId ? live.find(m => m.id === scoringMatchId) : undefined;
+
+  const scoreLabel = (match: Match) =>
+    `Enter score for ${sideNames(match, entries).join(' versus ')}`;
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-brand-100 p-6 mb-6">
       <div className="flex flex-wrap items-baseline justify-between gap-2 mb-4">
@@ -86,6 +115,12 @@ export default function CourtBoard({
         </p>
       </div>
 
+      {isAdmin && (
+        <p className="text-xs text-brand-700 bg-brand-50 border border-brand-100 rounded-lg px-3 py-2 mb-4">
+          Tap a court to enter the score when a game finishes.
+        </p>
+      )}
+
       {yourMatch && (
         <div className="bg-accent-50 border border-accent-200 rounded-xl px-4 py-3 mb-4">
           <p className="text-accent-900 font-bold">
@@ -94,10 +129,7 @@ export default function CourtBoard({
               : "You're on deck — waiting for a court"}
           </p>
           <p className="text-accent-700 text-sm mt-0.5">
-            {roundLabel(yourMatch)} ·{' '}
-            {[yourMatch.player1_id, yourMatch.player2_id]
-              .map(entryId => (entryId ? entries.get(entryId)?.display_name ?? 'TBD' : 'TBD'))
-              .join(' vs ')}
+            {roundLabel(yourMatch)} · {sideNames(yourMatch, entries).join(' vs ')}
           </p>
         </div>
       )}
@@ -110,20 +142,30 @@ export default function CourtBoard({
               highlightEntryId &&
               (match.player1_id === highlightEntryId || match.player2_id === highlightEntryId)
           );
+          const isClickable = Boolean(isAdmin && match);
+          const Wrapper = isClickable ? 'button' : 'div';
           return (
-            <div
+            <Wrapper
               key={court}
-              className={`rounded-xl border p-3.5 ${
+              type={isClickable ? 'button' : undefined}
+              onClick={isClickable && match ? () => setScoringMatchId(match.id) : undefined}
+              aria-label={isClickable && match ? scoreLabel(match) : undefined}
+              className={`block w-full text-left rounded-xl border p-3.5 transition-all ${
                 isYours
                   ? 'border-brand-400 ring-2 ring-brand-200 bg-brand-50'
                   : match
                   ? 'border-brand-200 bg-white'
                   : 'border-dashed border-gray-200 bg-gray-50'
-              }`}
+              } ${isClickable ? 'cursor-pointer hover:shadow-md hover:border-brand-400' : ''}`}
             >
-              <p className="text-xs font-bold uppercase tracking-wider text-brand-700 mb-1.5">
-                Court {court}
-              </p>
+              <div className="flex items-baseline justify-between gap-2 mb-1.5">
+                <p className="text-xs font-bold uppercase tracking-wider text-brand-700">
+                  Court {court}
+                </p>
+                {isClickable && (
+                  <span className="text-xs font-semibold text-brand-600">Score →</span>
+                )}
+              </div>
               {match ? (
                 <>
                   <Matchup match={match} entries={entries} highlightEntryId={highlightEntryId} />
@@ -132,7 +174,7 @@ export default function CourtBoard({
               ) : (
                 <p className="text-sm text-gray-400 italic">Open</p>
               )}
-            </div>
+            </Wrapper>
           );
         })}
       </div>
@@ -143,16 +185,49 @@ export default function CourtBoard({
             Waiting for a court
           </p>
           <ul className="space-y-1.5">
-            {waiting.map(match => (
-              <li key={match.id} className="text-sm text-gray-600 truncate">
-                {[match.player1_id, match.player2_id]
-                  .map(entryId => (entryId ? entries.get(entryId)?.display_name ?? 'TBD' : 'TBD'))
-                  .join(' vs ')}
-                <span className="text-gray-400"> · {roundLabel(match)}</span>
-              </li>
-            ))}
+            {waiting.map(match => {
+              const line = (
+                <>
+                  {sideNames(match, entries).join(' vs ')}
+                  <span className="text-gray-400"> · {roundLabel(match)}</span>
+                </>
+              );
+              return (
+                <li key={match.id} className="text-sm text-gray-600 truncate">
+                  {isAdmin ? (
+                    <button
+                      type="button"
+                      onClick={() => setScoringMatchId(match.id)}
+                      aria-label={scoreLabel(match)}
+                      className="block w-full text-left truncate rounded px-1 -mx-1 cursor-pointer hover:bg-brand-50 hover:text-brand-800 transition-colors"
+                    >
+                      {line}
+                    </button>
+                  ) : (
+                    line
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </div>
+      )}
+
+      {scoringMatch && isAdmin && (
+        <ScoreModal
+          match={{
+            ...scoringMatch,
+            player1: scoringMatch.player1_id ? entries.get(scoringMatch.player1_id) : undefined,
+            player2: scoringMatch.player2_id ? entries.get(scoringMatch.player2_id) : undefined,
+          }}
+          courtCount={courtCount}
+          onClose={() => setScoringMatchId(null)}
+          onChange={() => router.refresh()}
+          onSuccess={() => {
+            setScoringMatchId(null);
+            router.refresh();
+          }}
+        />
       )}
     </div>
   );
