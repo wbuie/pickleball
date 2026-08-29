@@ -46,6 +46,9 @@ export interface Tournament {
   // How many courts the event runs on. Playable matches are handed a court
   // number from 1..court_count so players know where to go.
   court_count: number;
+  // Rules & regulations for this event, as free text the organizer types in.
+  // NULL/empty means nothing has been posted yet.
+  rules: string | null;
   start_date: string | null;
   location: string | null;
   created_by: string;
@@ -247,6 +250,67 @@ export const TEAM_SIZE: Record<EventType, number> = {
 // Courts an organizer can pick from when setting up a tournament.
 export const MIN_COURTS = 1;
 export const MAX_COURTS = 32;
+
+// Starter rules an organizer can load into the tournament form and then edit.
+// These are the common house rules for each sport — they're a first draft, not
+// a fixed policy, and whatever the organizer saves is what players see.
+export const RULES_TEMPLATES: Record<Sport, string> = {
+  pickleball: `Scoring
+- Each match is a single game to 11 points, win by 2.
+- Only the serving side scores (traditional side-out scoring).
+- Call the score out loud before every serve: server's score, receiver's score, and server number in doubles.
+
+Serving
+- Serve underhand, contacting the ball below waist level, with both feet behind the baseline.
+- The serve goes crosscourt and must clear the non-volley zone (the kitchen) and its line.
+- One serve attempt per rally. A serve that clips the net and lands in is live — play it out.
+
+The kitchen (non-volley zone)
+- You may not volley the ball while any part of you is touching the kitchen or its line.
+- Momentum counts: volleying and then falling into the kitchen is a fault.
+- You may stand in the kitchen any time the ball has bounced.
+
+Two-bounce rule
+- The serve must bounce, and the return must bounce, before either side may volley.
+
+Line calls
+- Players call the lines on their own side, and the benefit of the doubt goes to the opponent.
+- If your team can't agree on a call, replay the rally.
+- Anything that can't be settled on court goes to the tournament director, whose decision is final.
+
+Match play
+- Be at your court and ready when your match is called; a team not ready five minutes after the call forfeits.
+- Report the final score to an organizer as soon as the match ends — the bracket updates automatically once it's entered.
+- Warm up for no more than five minutes before a match so the courts keep moving.
+
+Conduct
+- Play hard, keep it friendly, and treat opponents, partners, and volunteers with respect.
+- Foul language, arguing calls, and throwing paddles are grounds for removal from the tournament.`,
+  basketball: `Scoring
+- Baskets inside the arc count 1 point; baskets behind the arc count 2.
+- Games run to 21 points, win by 2, with a 15-minute cap — whoever leads when time expires wins.
+- If the score is tied when time expires, the next basket wins.
+
+Possession
+- Check the ball at the top of the key to start play and after every dead ball.
+- The ball must clear the arc on every change of possession.
+- After a made basket the ball goes to the other team — no make-it-take-it.
+
+Fouls
+- Players call their own fouls; the fouled team takes the ball out at the top of the key.
+- A foul on a shot inside the arc is one free throw, behind the arc is two.
+- After a team's fifth foul, every following foul goes to the free-throw line.
+
+Match play
+- Be at your court and ready when your game is called; a team not ready five minutes after the call forfeits.
+- Report the final score to an organizer as soon as the game ends — the bracket updates automatically once it's entered.
+- Only rostered players may play; substitutions happen on dead balls.
+
+Conduct
+- Play hard, keep it friendly, and treat opponents, teammates, and volunteers with respect.
+- Foul language, arguing calls, and rough play are grounds for removal from the tournament.`,
+};
+
 
 export function isSport(value: unknown): value is Sport {
   return value === 'pickleball' || value === 'basketball';

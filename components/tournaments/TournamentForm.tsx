@@ -6,11 +6,12 @@ import Link from 'next/link';
 import TournamentQrCode, { CopyLinkButton } from '@/components/tournaments/TournamentQrCode';
 import { displayUrl } from '@/lib/url';
 import type { EventType, Sport, TournamentFormat } from '@/lib/types/app';
-import { SPORT_EVENT_TYPES, SPORT_LABELS, EVENT_LABELS, MIN_COURTS, MAX_COURTS } from '@/lib/types/app';
+import { SPORT_EVENT_TYPES, SPORT_LABELS, EVENT_LABELS, MIN_COURTS, MAX_COURTS, RULES_TEMPLATES } from '@/lib/types/app';
 
 export interface TournamentFormValues {
   name: string;
   description: string | null;
+  rules: string | null;
   sport: Sport;
   format: TournamentFormat;
   event_type: EventType;
@@ -65,11 +66,19 @@ export default function TournamentForm({
       : SPORT_EVENT_TYPES[initial?.sport ?? 'pickleball'][0]
   );
 
+  // Rules are controlled so the "start from the standard rules" button can fill
+  // the box in; whatever the organizer leaves in it is what players read.
+  const [rules, setRules] = useState(initial?.rules ?? '');
+  const rulesAreTemplate = rules.trim() === RULES_TEMPLATES[sport].trim();
+
   const handleSportChange = (next: Sport) => {
     setSport(next);
     if (!SPORT_EVENT_TYPES[next].includes(eventType)) {
       setEventType(SPORT_EVENT_TYPES[next][0]);
     }
+    // Swap an untouched template for the new sport's; anything the organizer
+    // has actually written is left alone.
+    if (!rules.trim() || rulesAreTemplate) setRules(RULES_TEMPLATES[next]);
   };
 
   const isEdit = mode === 'edit';
@@ -97,6 +106,7 @@ export default function TournamentForm({
     const data = {
       name: form.get('name'),
       description: form.get('description'),
+      rules: form.get('rules'),
       ...structural,
       court_count: parseInt(form.get('court_count') as string) || 1,
       start_date: form.get('start_date') || null,
@@ -161,7 +171,7 @@ export default function TournamentForm({
             <textarea
               id="t-description"
               name="description"
-              placeholder="Details about the tournament, rules, prizes, etc."
+              placeholder="A short blurb about the tournament — what it's for, prizes, who to contact."
               rows={3}
               defaultValue={initial?.description ?? ''}
               className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent resize-none"
@@ -171,7 +181,7 @@ export default function TournamentForm({
           {structuralLocked && (
             <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
               The bracket has been generated, so the sport, event, format, and size are locked. You can
-              still update the name, description, date, location, and number of courts.
+              still update the name, description, rules, date, location, and number of courts.
             </p>
           )}
 
@@ -299,6 +309,48 @@ export default function TournamentForm({
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
               />
             </div>
+          </div>
+
+          <div>
+            <div className="flex items-baseline justify-between gap-3 flex-wrap mb-1">
+              <label htmlFor="t-rules" className="block text-sm font-medium text-gray-700">
+                Rules &amp; Regulations
+              </label>
+              <div className="flex items-center gap-3">
+                {!rulesAreTemplate && (
+                  <button
+                    type="button"
+                    onClick={() => setRules(RULES_TEMPLATES[sport])}
+                    className="text-xs font-medium text-brand-700 hover:underline"
+                  >
+                    {rules.trim() ? 'Replace with standard rules' : `Start from standard ${SPORT_LABELS[sport].toLowerCase()} rules`}
+                  </button>
+                )}
+                {rules.trim() && (
+                  <button
+                    type="button"
+                    onClick={() => setRules('')}
+                    className="text-xs font-medium text-gray-500 hover:underline"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
+            <textarea
+              id="t-rules"
+              name="rules"
+              rows={12}
+              value={rules}
+              onChange={e => setRules(e.target.value)}
+              placeholder={`Scoring\n- Each match is a single game to 11 points, win by 2.\n\nConduct\n- Play hard and keep it friendly.`}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              Shown on the tournament page so players can read how the event plays. Plain text: a short
+              line (or one ending in a colon) becomes a section heading, and lines starting with
+              &ldquo;-&rdquo; or a number become a list. Leave it empty and the section stays hidden.
+            </p>
           </div>
 
           {error && (

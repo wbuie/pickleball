@@ -16,6 +16,7 @@ A tournament hosting web app for **Christ Fellowship Church, Birmingham**. Built
 - **Admins by email** — Organizers grant admin access by email from the League Admin page; a matching account is promoted immediately, and unregistered emails are auto-granted admin when they sign up
 - **Auto-Seeding** — Seeded automatically by skill level; admins can override
 - **Courts** — An organizer says how many courts the event runs on, and every match that's ready to play is handed a court number. Courts recycle themselves: entering a score frees that court for the next match in line, and players see an "On the courts" board (plus a "You're up on Court 3" callout) on the tournament page. Court count can change mid-event, and an admin can move any match to a specific court
+- **Rules & regulations** — Every tournament has a rules section on its page: scoring, serving, line calls, conduct — whatever the organizer posts. It's plain text (short lines become headings, `-`/numbered lines become lists), and the create/edit form can start an organizer off with the standard rules for that sport. Leave it empty and the section stays hidden from players
 - **Printable QR sign** — Every tournament gets a QR code pointing at its page. Organizers find it on the tournament's edit screen and can print a full-sheet sign (name, date, location, big code) to tape up at the check-in table, or download the bare code as PNG/SVG for a flyer or slide. The same code carries the event from sign-ups through live scores
 - **Live Scoring** — Admins enter scores; winners advance automatically through the bracket, and the bracket updates in real time for spectators (Supabase Realtime) without refreshing
 - **Editable Results** — Admins can correct a completed match; if the result hasn't already cascaded into a played match, the change re-propagates automatically
@@ -62,6 +63,7 @@ npm install
    - `007_admin_email_allowlist.sql` — `admin_emails` allowlist so organizers can grant admin by email (promotes existing accounts and auto-grants on signup)
    - `008_basketball_rating.sql` — per-player `basketball_skill_level` (1–5 tiers) used to seed basketball tournaments
    - `009_courts.sql` — courts: `tournaments.court_count` and `matches.court`, so matches get a court number players can look up
+   - `010_tournament_rules.sql` — `tournaments.rules`, the free-text rules & regulations shown on the tournament page
 
 ### 3. Configure Environment Variables
 
@@ -152,6 +154,7 @@ components/
   bracket/MatchCard.tsx
   admin/ScoreModal.tsx
   tournaments/CourtBoard.tsx         # "Where do I play?" — one tile per court
+  tournaments/TournamentRules.tsx    # Rules & regulations card on the tournament page
   tournaments/TournamentQrCode.tsx   # QR code + copy/print/download controls
   tournaments/TournamentCard.tsx
   tournaments/RegisterButton.tsx
@@ -169,6 +172,7 @@ lib/
     courts.ts                  # Court assignment + recycling
     scoring.ts                 # Score recording + winner advancement
   types/app.ts
+  rules.ts              # Parses an organizer's plain-text rules into blocks
   url.ts                # displayUrl (client-safe)
   url.server.ts         # absoluteUrl — builds the shareable link from the request
 ```
