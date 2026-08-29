@@ -7,6 +7,7 @@ A tournament hosting web app for **Christ Fellowship Church, Birmingham**. Built
 - **Multiple Sports** — Each tournament picks a sport and an event. **Pickleball** runs singles and doubles; **basketball** runs 3v3, 4v4, and 5v5. The bracket engine is sport-agnostic (it works on entries), so adding another sport/event is a matter of extending the `Sport`/`EventType` tables in `lib/types/app.ts`
 - **Singles & Doubles (pickleball)** — Doubles entries are two-player teams: a player can pick their partner when registering, or an organizer can pair players on the admin panel. Teams are seeded by their average skill
 - **Team events (basketball)** — 3v3/4v4/5v5 entries are named teams with a captain and a roster. A captain names the team and picks teammates when registering, or an organizer creates teams and fills rosters on the admin panel. Teams are seeded by their roster's average skill
+- **Entry list edits** — Until the bracket is generated an organizer can reshape the field from the admin panel: add a player, pair or unpair a doubles team, fill a roster, and remove anyone — a whole entry, or one player out of a team (their partner stays in as a solo entry and keeps the seed). Changes show up on the panel as they're made, without waiting on a reload
 - **Player Registration** — Players create accounts and set their skill level by either picking a plain-language description ("Brand new", "Recreational", "Advanced", …) or entering a DUPR rating (2.0–5.0) if they know it
 - **Password reset** — A self-serve "Forgot password?" flow: players request a reset email, click the link, and set a new password (Supabase Auth recovery; the link routes through `/auth/callback` → `/auth/reset`)
 - **Tournament Management** — Admins create tournaments with format, date, location, and capacity
@@ -137,6 +138,7 @@ app/
   api/
     tournaments/route.ts      # POST create tournament
     tournaments/[id]/register/route.ts   # Register/withdraw
+    tournaments/[id]/registrations/route.ts  # Remove an entry, or one player in it
     tournaments/[id]/bracket/generate/route.ts  # Generate bracket
     tournaments/[id]/seed/route.ts       # Update seeds
     matches/[matchId]/score/route.ts     # Enter match score
