@@ -49,6 +49,10 @@ export interface Tournament {
   // Rules & regulations for this event, as free text the organizer types in.
   // NULL/empty means nothing has been posted yet.
   rules: string | null;
+  // When true, anyone on the tournament page can report the result of a match
+  // that hasn't been played — no sign-in, no organizer needed. Correcting a
+  // final score stays with the organizers. Off by default.
+  open_scoring: boolean;
   start_date: string | null;
   location: string | null;
   created_by: string;

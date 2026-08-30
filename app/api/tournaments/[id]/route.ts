@@ -4,7 +4,8 @@ import { syncCourtAssignments } from '@/lib/bracket/courts';
 import { SPORT_EVENT_TYPES, isSport, isRosterEvent, MIN_COURTS, MAX_COURTS } from '@/lib/types/app';
 
 // Edit an existing tournament. Name/description/rules/date/location are always
-// editable, as is the number of courts (they can change on the day); the event
+// editable, as are the number of courts and who may report scores (both can
+// change on the day); the event
 // type, format, and size can only change before the bracket is generated
 // (afterwards they'd invalidate the matches).
 export async function PATCH(
@@ -35,7 +36,7 @@ export async function PATCH(
     if (!current) return NextResponse.json({ error: 'Tournament not found' }, { status: 404 });
 
     const body = await request.json();
-    const { name, description, rules, court_count, start_date, location } = body;
+    const { name, description, rules, court_count, start_date, location, open_scoring } = body;
     // A structural field the client couldn't edit comes through as null (or is
     // absent) — either way it means "leave this alone", not "set it to null".
     // description/rules/start_date/location are different: null clears them.
@@ -81,6 +82,14 @@ export async function PATCH(
     if (rules !== undefined) updates.rules = typeof rules === 'string' && rules.trim() ? rules.trim() : null;
     if (start_date !== undefined) updates.start_date = start_date || null;
     if (location !== undefined) updates.location = location || null;
+    // Who may report scores can be flipped at any point in the event — an
+    // organizer who ends up short-handed opens it up mid-tournament.
+    if (open_scoring !== undefined) {
+      if (typeof open_scoring !== 'boolean') {
+        return NextResponse.json({ error: 'Open scoring must be true or false' }, { status: 400 });
+      }
+      updates.open_scoring = open_scoring;
+    }
 
     // Structural changes (sport/event/format/size) are only allowed pre-bracket.
     const bracketLive = current.status === 'active' || current.status === 'completed';

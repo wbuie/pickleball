@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, description, rules, sport, format, event_type, max_players, court_count, start_date, location } = body;
+    const { name, description, rules, sport, format, event_type, max_players, court_count, start_date, location, open_scoring } = body;
 
     if (!name || !format) {
       return NextResponse.json({ error: 'Name and format are required' }, { status: 400 });
@@ -61,6 +61,9 @@ export async function POST(request: NextRequest) {
         event_type: chosenEvent,
         max_players: max_players || 16,
         court_count: courts,
+        // Off unless the organizer asks for it: scoring stays with them by
+        // default, and older clients don't send the field at all.
+        open_scoring: open_scoring === true,
         start_date: start_date || null,
         location: location || null,
         created_by: user.id,

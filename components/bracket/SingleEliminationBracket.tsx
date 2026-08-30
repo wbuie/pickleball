@@ -2,12 +2,13 @@
 
 import MatchCard from './MatchCard';
 import type { Match, BracketEntry, BracketGrid } from '@/lib/types/app';
+import type { ScoreAccess } from '@/lib/scoreAccess';
 import { getWinnersRoundCount } from '@/lib/bracket/utils';
 
 interface SingleEliminationBracketProps {
   grid: BracketGrid;
   playerMap: Map<string, BracketEntry>;
-  isAdmin?: boolean;
+  access?: ScoreAccess;
   onScoreClick?: (matchId: string) => void;
 }
 
@@ -29,7 +30,7 @@ const BASE_HEIGHT = 76; // px (match card + gap)
 export default function SingleEliminationBracket({
   grid,
   playerMap,
-  isAdmin,
+  access,
   onScoreClick,
 }: SingleEliminationBracketProps) {
   const numRounds = getWinnersRoundCount(grid);
@@ -78,7 +79,7 @@ export default function SingleEliminationBracket({
                       >
                         <MatchCard
                           match={match}
-                          isAdmin={isAdmin}
+                          access={access}
                           onScoreClick={onScoreClick}
                         />
                       </div>

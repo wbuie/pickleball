@@ -7,13 +7,23 @@ interface ScoreModalProps {
   match: Match & { player1?: BracketEntry; player2?: BracketEntry };
   // How many courts this tournament runs on, so the court can be reassigned.
   courtCount: number;
+  // Moving a match between courts is an organizer's job — players reporting a
+  // score on an open tournament just get the two score boxes.
+  canMoveCourt?: boolean;
   onClose: () => void;
   // Called after a change that the page needs to re-read (a court move).
   onChange?: () => void;
   onSuccess: () => void;
 }
 
-export default function ScoreModal({ match, courtCount, onClose, onChange, onSuccess }: ScoreModalProps) {
+export default function ScoreModal({
+  match,
+  courtCount,
+  canMoveCourt = false,
+  onClose,
+  onChange,
+  onSuccess,
+}: ScoreModalProps) {
   const isEdit = match.status === 'completed';
   const [p1Score, setP1Score] = useState(match.player1_score?.toString() ?? '');
   const [p2Score, setP2Score] = useState(match.player2_score?.toString() ?? '');
@@ -143,27 +153,29 @@ export default function ScoreModal({ match, courtCount, onClose, onChange, onSuc
             />
           </div>
 
-          <div>
-            <label htmlFor="match-court" className="block text-sm font-medium text-gray-700 mb-1">
-              Court
-            </label>
-            <select
-              id="match-court"
-              value={court ?? ''}
-              disabled={movingCourt}
-              onChange={e => handleCourtChange(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent disabled:opacity-50"
-            >
-              <option value="">Assign automatically</option>
-              {Array.from({ length: courtCount }, (_, i) => i + 1).map(n => (
-                <option key={n} value={n}>Court {n}</option>
-              ))}
-            </select>
-            <p className="text-xs text-gray-400 mt-1">
-              Saved right away. Moving a match here bumps whoever was on that court back into the
-              queue; &ldquo;automatically&rdquo; hands it the next court that frees up.
-            </p>
-          </div>
+          {canMoveCourt && (
+            <div>
+              <label htmlFor="match-court" className="block text-sm font-medium text-gray-700 mb-1">
+                Court
+              </label>
+              <select
+                id="match-court"
+                value={court ?? ''}
+                disabled={movingCourt}
+                onChange={e => handleCourtChange(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent disabled:opacity-50"
+              >
+                <option value="">Assign automatically</option>
+                {Array.from({ length: courtCount }, (_, i) => i + 1).map(n => (
+                  <option key={n} value={n}>Court {n}</option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-400 mt-1">
+                Saved right away. Moving a match here bumps whoever was on that court back into the
+                queue; &ldquo;automatically&rdquo; hands it the next court that frees up.
+              </p>
+            </div>
+          )}
 
           {error && (
             <p className="text-red-600 text-sm bg-red-50 rounded-lg px-3 py-2">{error}</p>
