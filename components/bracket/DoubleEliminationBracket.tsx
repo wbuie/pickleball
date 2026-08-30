@@ -2,12 +2,13 @@
 
 import MatchCard from './MatchCard';
 import type { Match, BracketEntry, BracketGrid } from '@/lib/types/app';
+import type { ScoreAccess } from '@/lib/scoreAccess';
 import { getWinnersRoundCount, getLosersRoundCount } from '@/lib/bracket/utils';
 
 interface DoubleEliminationBracketProps {
   grid: BracketGrid;
   playerMap: Map<string, BracketEntry>;
-  isAdmin?: boolean;
+  access?: ScoreAccess;
   onScoreClick?: (matchId: string) => void;
 }
 
@@ -27,7 +28,7 @@ function BracketSection({
   rounds,
   roundData,
   playerMap,
-  isAdmin,
+  access,
   onScoreClick,
   getRoundLabel,
   bgColor = 'bg-brand-50',
@@ -36,7 +37,7 @@ function BracketSection({
   rounds: number;
   roundData: Record<number, Match[]>;
   playerMap: Map<string, BracketEntry>;
-  isAdmin?: boolean;
+  access?: ScoreAccess;
   onScoreClick?: (matchId: string) => void;
   getRoundLabel: (r: number) => string;
   bgColor?: string;
@@ -72,7 +73,7 @@ function BracketSection({
                     <div key={match.id} className="flex justify-center">
                       <MatchCard
                         match={match}
-                        isAdmin={isAdmin}
+                        access={access}
                         onScoreClick={onScoreClick}
                       />
                     </div>
@@ -90,7 +91,7 @@ function BracketSection({
 export default function DoubleEliminationBracket({
   grid,
   playerMap,
-  isAdmin,
+  access,
   onScoreClick,
 }: DoubleEliminationBracketProps) {
   const wbRounds = getWinnersRoundCount(grid);
@@ -116,7 +117,7 @@ export default function DoubleEliminationBracket({
         rounds={wbRounds}
         roundData={grid.winners}
         playerMap={playerMap}
-        isAdmin={isAdmin}
+        access={access}
         onScoreClick={onScoreClick}
         getRoundLabel={getWBLabel}
         bgColor="bg-brand-50"
@@ -129,7 +130,7 @@ export default function DoubleEliminationBracket({
           rounds={lbRounds}
           roundData={grid.losers}
           playerMap={playerMap}
-          isAdmin={isAdmin}
+          access={access}
           onScoreClick={onScoreClick}
           getRoundLabel={getLBLabel}
           bgColor="bg-orange-50"
@@ -150,7 +151,7 @@ export default function DoubleEliminationBracket({
                 </p>
                 <MatchCard
                   match={match}
-                  isAdmin={isAdmin}
+                  access={access}
                   onScoreClick={onScoreClick}
                 />
                 {idx === 1 && match.status === 'pending' && !match.player1_id && (

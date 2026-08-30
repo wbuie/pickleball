@@ -20,6 +20,7 @@ A tournament hosting web app for **Christ Fellowship Church, Birmingham**. Built
 - **Rules & regulations** — Every tournament has a rules section on its page: scoring, serving, line calls, conduct — whatever the organizer posts. It's plain text (short lines become headings, `-`/numbered lines become lists), and the create/edit form can start an organizer off with the standard rules for that sport. Leave it empty and the section stays hidden from players
 - **Printable QR sign** — Every tournament gets a QR code pointing at its page. Organizers find it on the tournament's edit screen and can print a full-sheet sign (name, date, location, big code) to tape up at the check-in table, or download the bare code as PNG/SVG for a flyer or slide. The same code carries the event from sign-ups through live scores
 - **Live Scoring** — Admins enter scores; winners advance automatically through the bracket, and the bracket updates in real time for spectators (Supabase Realtime) without refreshing
+- **Open score reporting** — Per tournament, an organizer can drop the sign-in gate so anyone on the tournament page reports scores themselves: they tap their court, type the score, and the bracket moves — no account, no organizer standing there. Off by default, flipped from the Admin Panel (or the create/edit form) at any point in the event. Correcting a score that's already final stays with the organizers either way
 - **Editable Results** — Admins can correct a completed match; if the result hasn't already cascaded into a played match, the change re-propagates automatically
 - **Visual Brackets** — Clean horizontal bracket visualization for both formats
 - **Role-Based Access** — Admin vs player permissions enforced via Supabase RLS (the admin panel is also guarded server-side)
@@ -65,6 +66,7 @@ npm install
    - `008_basketball_rating.sql` — per-player `basketball_skill_level` (1–5 tiers) used to seed basketball tournaments
    - `009_courts.sql` — courts: `tournaments.court_count` and `matches.court`, so matches get a court number players can look up
    - `010_tournament_rules.sql` — `tournaments.rules`, the free-text rules & regulations shown on the tournament page
+   - `011_open_scoring.sql` — `tournaments.open_scoring`, the per-tournament switch that lets anyone (not just organizers) report match scores
 
 ### 3. Configure Environment Variables
 
@@ -119,7 +121,7 @@ npm test
 3. **Admin** opens the Admin Panel → optionally adjusts seeding → clicks **Generate Bracket**
 4. Seeds 1–N are assigned by DUPR rating (highest = seed 1); byes go to top seeds
 5. Every match that's ready to play is given a court (1…court count); the rest wait in line
-6. **Admin** clicks any ready match → enters scores → winner advances automatically, and the court passes to the next match
+6. **Admin** clicks any ready match → enters scores → winner advances automatically, and the court passes to the next match. With **open score reporting** on for the tournament, players do this themselves from their court tile — signed in or not
 7. Double elimination: losers drop to the Losers Bracket; Grand Finals can have a Reset match
 
 ---
@@ -175,6 +177,7 @@ lib/
     scoring.ts                 # Score recording + winner advancement
   types/app.ts
   rules.ts              # Parses an organizer's plain-text rules into blocks
+  scoreAccess.ts        # Who may report or correct a score (organizers vs. open scoring)
   url.ts                # displayUrl (client-safe)
   url.server.ts         # absoluteUrl — builds the shareable link from the request
 ```

@@ -62,6 +62,7 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
   const [nameDrafts, setNameDrafts] = useState<Record<string, string>>({});
   const [courtDraft, setCourtDraft] = useState(String(tournament.court_count ?? 1));
   const [savingCourts, setSavingCourts] = useState(false);
+  const [savingScoring, setSavingScoring] = useState(false);
   const [playerToAdd, setPlayerToAdd] = useState('');
   const [newTeamName, setNewTeamName] = useState('');
   const [addingPlayer, setAddingPlayer] = useState(false);
@@ -362,6 +363,31 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
       setError(data.error || 'Failed to update courts');
     }
     setSavingCourts(false);
+  };
+
+  // Who reports scores can change mid-event too — an organizer who ends up
+  // short-handed hands scoring to the players rather than running court to court.
+  const handleToggleOpenScoring = async (open: boolean) => {
+    setSavingScoring(true);
+    setError('');
+    setSuccess('');
+    const res = await fetch(`/api/tournaments/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ open_scoring: open }),
+    });
+    if (res.ok) {
+      setSuccess(
+        open
+          ? 'Anyone on the tournament page can now report scores.'
+          : 'Score reporting is back to organizers only.'
+      );
+      router.refresh();
+    } else {
+      const data = await res.json();
+      setError(data.error || 'Failed to update score reporting');
+    }
+    setSavingScoring(false);
   };
 
   const handleSaveSeeds = async () => {
@@ -813,6 +839,38 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
         </div>
       </div>
 
+      {/* Who can report scores */}
+      <div className="bg-white rounded-2xl shadow-sm border border-brand-100 p-6 mb-6">
+        <h2 className="text-lg font-bold text-gray-900 mb-1">Score reporting</h2>
+        <p className="text-sm text-gray-500 mb-4">
+          By default only organizers can enter a score, so someone with an admin account has to be
+          there when every game ends. Open it up and anyone on the tournament page can report the
+          result of a game that has just finished — no sign-in, no account. Correcting a score
+          that&rsquo;s already final stays with you either way.
+        </p>
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={tournament.open_scoring ?? false}
+            disabled={savingScoring}
+            onChange={e => handleToggleOpenScoring(e.target.checked)}
+            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand-700 focus:ring-brand-500 disabled:opacity-50"
+          />
+          <span className="text-sm">
+            <span className="font-medium text-gray-800">
+              Let anyone report scores for this tournament
+            </span>
+            <span className="block text-gray-500">
+              {savingScoring
+                ? 'Saving…'
+                : tournament.open_scoring
+                ? 'On — players tap their court and enter the score themselves.'
+                : 'Off — organizers enter every score.'}
+            </span>
+          </span>
+        </label>
+      </div>
+
       {/* Tournament Info */}
       <div className="bg-white rounded-2xl shadow-sm border border-brand-100 p-6">
         <h2 className="text-lg font-bold text-gray-900 mb-4">Tournament Info</h2>
@@ -840,6 +898,12 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
           <div className="flex gap-2">
             <dt className="text-gray-500 w-32">Courts</dt>
             <dd className="font-medium text-gray-800">{tournament.court_count ?? 1}</dd>
+          </div>
+          <div className="flex gap-2">
+            <dt className="text-gray-500 w-32">Score reporting</dt>
+            <dd className="font-medium text-gray-800">
+              {tournament.open_scoring ? 'Open to anyone' : 'Organizers only'}
+            </dd>
           </div>
           {tournament.start_date && (
             <div className="flex gap-2">

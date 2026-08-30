@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import ScoreModal from '@/components/admin/ScoreModal';
 import type { BracketEntry, Match } from '@/lib/types/app';
 import { isPlayable } from '@/lib/bracket/courts';
+import { canScoreMatch, type ScoreAccess } from '@/lib/scoreAccess';
 
 interface CourtBoardProps {
   matches: Match[];
@@ -13,9 +14,10 @@ interface CourtBoardProps {
   // Registration id of the signed-in viewer's entry, so we can tell them where
   // to go rather than making them hunt for their name.
   highlightEntryId?: string;
-  // Organizers score matches straight off the board — it's the screen they're
-  // already looking at while games finish.
-  isAdmin?: boolean;
+  // Scores are entered straight off the board — it's the screen everyone is
+  // already looking at while games finish. Organizers always get that; on a
+  // tournament with open scoring, so does everyone else ('report').
+  access?: ScoreAccess;
 }
 
 function roundLabel(match: Match): string {
@@ -67,15 +69,16 @@ function Matchup({
  * the matches waiting for a court to open up. Courts are assigned automatically
  * as matches become ready, so this is always the live picture.
  *
- * For an admin every match on the board is also a score entry point — tapping
- * a court (or a waiting match) opens the same modal the bracket uses.
+ * For anyone allowed to score, every match on the board is also a score entry
+ * point — tapping a court (or a waiting match) opens the same modal the bracket
+ * uses.
  */
 export default function CourtBoard({
   matches,
   entries: entryList,
   courtCount,
   highlightEntryId,
-  isAdmin,
+  access = 'none',
 }: CourtBoardProps) {
   const router = useRouter();
   const [scoringMatchId, setScoringMatchId] = useState<string | null>(null);
@@ -115,9 +118,11 @@ export default function CourtBoard({
         </p>
       </div>
 
-      {isAdmin && (
+      {access !== 'none' && (
         <p className="text-xs text-brand-700 bg-brand-50 border border-brand-100 rounded-lg px-3 py-2 mb-4">
-          Tap a court to enter the score when a game finishes.
+          {access === 'full'
+            ? 'Tap a court to enter the score when a game finishes.'
+            : 'Finished your game? Tap your court to report the score — no sign-in needed. It goes straight onto the bracket, so double-check it before you save.'}
         </p>
       )}
 
@@ -142,7 +147,7 @@ export default function CourtBoard({
               highlightEntryId &&
               (match.player1_id === highlightEntryId || match.player2_id === highlightEntryId)
           );
-          const isClickable = Boolean(isAdmin && match);
+          const isClickable = Boolean(match && canScoreMatch(access, match));
           const Wrapper = isClickable ? 'button' : 'div';
           return (
             <Wrapper
@@ -194,7 +199,7 @@ export default function CourtBoard({
               );
               return (
                 <li key={match.id} className="text-sm text-gray-600 truncate">
-                  {isAdmin ? (
+                  {canScoreMatch(access, match) ? (
                     <button
                       type="button"
                       onClick={() => setScoringMatchId(match.id)}
@@ -213,7 +218,7 @@ export default function CourtBoard({
         </div>
       )}
 
-      {scoringMatch && isAdmin && (
+      {scoringMatch && canScoreMatch(access, scoringMatch) && (
         <ScoreModal
           match={{
             ...scoringMatch,
@@ -221,6 +226,7 @@ export default function CourtBoard({
             player2: scoringMatch.player2_id ? entries.get(scoringMatch.player2_id) : undefined,
           }}
           courtCount={courtCount}
+          canMoveCourt={access === 'full'}
           onClose={() => setScoringMatchId(null)}
           onChange={() => router.refresh()}
           onSuccess={() => {

@@ -9,6 +9,7 @@ import TournamentRules from '@/components/tournaments/TournamentRules';
 import { StatusBadge, SkillBadge, BasketballBadge } from '@/components/ui/Badge';
 import { FORMAT_LABELS, STATUS_LABELS, EVENT_LABELS, SPORT_LABELS, entryName, entrySkill, entryPlayers, entryNoun as entryNounFor, isRosterEvent, isTeamEvent } from '@/lib/types/app';
 import type { Match, Profile, BracketEntry, TournamentRegistration, EventType, Sport } from '@/lib/types/app';
+import { scoreAccessFor } from '@/lib/scoreAccess';
 
 export async function generateMetadata({
   params,
@@ -81,6 +82,10 @@ export default async function TournamentPage({
   const entryNoun = entryNounFor(tournament.event_type as EventType);
   const sport = tournament.sport as Sport;
   const courtCount = tournament.court_count ?? 1;
+  const isAdmin = profile?.is_admin ?? false;
+  // Organizers can always score. On a tournament run with open scoring, so can
+  // whoever is standing on the court — signed in or not.
+  const scoreAccess = scoreAccessFor(isAdmin, tournament.open_scoring);
 
   const myEntry = user
     ? registrations.find(
@@ -175,7 +180,7 @@ export default async function TournamentPage({
               </div>
             )}
 
-            {tournament.status === 'registration' && user && !profile?.is_admin && (
+            {tournament.status === 'registration' && user && !isAdmin && (
               <RegisterButton
                 tournamentId={id}
                 isRegistered={isRegistered}
@@ -185,7 +190,7 @@ export default async function TournamentPage({
               />
             )}
 
-            {profile?.is_admin && (
+            {isAdmin && (
               <div className="flex gap-2">
                 <Link
                   href={`/tournaments/${id}/edit`}
@@ -209,7 +214,7 @@ export default async function TournamentPage({
       <TournamentRules
         rules={tournament.rules ?? null}
         tournamentId={id}
-        isAdmin={profile?.is_admin ?? false}
+        isAdmin={isAdmin}
       />
 
       {/* Where to play: one tile per court, plus who's waiting */}
@@ -218,7 +223,7 @@ export default async function TournamentPage({
         entries={entries}
         courtCount={courtCount}
         highlightEntryId={myEntry?.id}
-        isAdmin={profile?.is_admin ?? false}
+        access={scoreAccess}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -230,7 +235,7 @@ export default async function TournamentPage({
             matches={(matches || []) as Match[]}
             players={entries}
             format={tournament.format as 'single_elimination' | 'double_elimination'}
-            isAdmin={profile?.is_admin ?? false}
+            access={scoreAccess}
             courtCount={courtCount}
             highlightEntryId={myEntry?.id}
           />

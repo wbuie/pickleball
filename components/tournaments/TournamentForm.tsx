@@ -17,6 +17,7 @@ export interface TournamentFormValues {
   event_type: EventType;
   max_players: number;
   court_count: number;
+  open_scoring: boolean;
   start_date: string | null;
   location: string | null;
 }
@@ -109,6 +110,7 @@ export default function TournamentForm({
       rules: form.get('rules'),
       ...structural,
       court_count: parseInt(form.get('court_count') as string) || 1,
+      open_scoring: form.get('open_scoring') === 'on',
       start_date: form.get('start_date') || null,
       location: form.get('location') || null,
     };
@@ -181,7 +183,8 @@ export default function TournamentForm({
           {structuralLocked && (
             <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
               The bracket has been generated, so the sport, event, format, and size are locked. You can
-              still update the name, description, rules, date, location, and number of courts.
+              still update the name, description, rules, date, location, number of courts, and who
+              can report scores.
             </p>
           )}
 
@@ -284,6 +287,27 @@ export default function TournamentForm({
               How many courts you&rsquo;ll play on. Matches are handed a court number as they come up,
               so everyone knows where to go — change this any time if courts open up or go away.
             </p>
+          </div>
+
+          <div>
+            <label className="flex items-start gap-3 cursor-pointer rounded-lg border border-gray-200 px-3 py-2.5">
+              <input
+                id="t-open-scoring"
+                name="open_scoring"
+                type="checkbox"
+                defaultChecked={initial?.open_scoring ?? false}
+                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand-700 focus:ring-brand-500"
+              />
+              <span className="text-sm">
+                <span className="font-medium text-gray-700">Let anyone report scores</span>
+                <span className="block text-xs text-gray-400 mt-0.5">
+                  Off by default: only organizers enter scores. Turn it on and anyone on the
+                  tournament page can report the result of a game that just finished — no sign-in
+                  needed — so you don&rsquo;t have to walk court to court. Changing a score
+                  that&rsquo;s already final stays with organizers either way.
+                </span>
+              </span>
+            </label>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

@@ -8,13 +8,16 @@ import MatchList from './MatchList';
 import ScoreModal from '@/components/admin/ScoreModal';
 import { createClient } from '@/lib/supabase/client';
 import type { Match, BracketEntry, BracketGrid, TournamentFormat } from '@/lib/types/app';
+import { canScoreMatch, type ScoreAccess } from '@/lib/scoreAccess';
 
 interface BracketViewerProps {
   tournamentId: string;
   matches: Match[];
   players: BracketEntry[];
   format: TournamentFormat;
-  isAdmin?: boolean;
+  // What this viewer may do with scores: nothing, report an unplayed match
+  // (a tournament with open scoring), or also correct a final one (organizers).
+  access?: ScoreAccess;
   // How many courts the tournament runs on, so an admin can move a match.
   courtCount: number;
   // Registration id of the signed-in viewer's entry, if any — used by the list
@@ -40,7 +43,7 @@ function useMediaQuery(query: string): boolean {
   );
 }
 
-export default function BracketViewer({ tournamentId, matches, players, format, isAdmin, courtCount, highlightEntryId }: BracketViewerProps) {
+export default function BracketViewer({ tournamentId, matches, players, format, access = 'none', courtCount, highlightEntryId }: BracketViewerProps) {
   const router = useRouter();
   const [scoringMatchId, setScoringMatchId] = useState<string | null>(null);
 
@@ -128,7 +131,7 @@ export default function BracketViewer({ tournamentId, matches, players, format, 
           grid={grid}
           playerMap={playerMap}
           format={format}
-          isAdmin={isAdmin}
+          access={access}
           onScoreClick={setScoringMatchId}
           highlightEntryId={highlightEntryId}
         />
@@ -136,19 +139,19 @@ export default function BracketViewer({ tournamentId, matches, players, format, 
         <SingleEliminationBracket
           grid={grid}
           playerMap={playerMap}
-          isAdmin={isAdmin}
+          access={access}
           onScoreClick={setScoringMatchId}
         />
       ) : (
         <DoubleEliminationBracket
           grid={grid}
           playerMap={playerMap}
-          isAdmin={isAdmin}
+          access={access}
           onScoreClick={setScoringMatchId}
         />
       )}
 
-      {scoringMatch && isAdmin && (
+      {scoringMatch && canScoreMatch(access, scoringMatch) && (
         <ScoreModal
           match={{
             ...scoringMatch,
@@ -156,6 +159,7 @@ export default function BracketViewer({ tournamentId, matches, players, format, 
             player2: scoringMatch.player2_id ? playerMap.get(scoringMatch.player2_id) : undefined,
           }}
           courtCount={courtCount}
+          canMoveCourt={access === 'full'}
           onClose={() => setScoringMatchId(null)}
           onChange={() => router.refresh()}
           onSuccess={() => {
