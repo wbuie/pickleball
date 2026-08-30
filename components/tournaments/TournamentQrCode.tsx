@@ -186,3 +186,87 @@ export function QrDownloadButtons({
     </>
   );
 }
+
+export type SignScope = 'both' | 'signup' | 'playday';
+
+const SCOPE_OPTIONS: { value: SignScope; label: string }[] = [
+  { value: 'both', label: 'Both' },
+  { value: 'signup', label: 'Sign-ups' },
+  { value: 'playday', label: 'Tournament day' },
+];
+
+/**
+ * The two printable signs and the controls that pick which of them prints.
+ *
+ * A tournament needs different wording at different points in its life — "scan
+ * to sign up" beforehand, "scan to see where you're playing" on the day — but
+ * both signs get printed in the same sitting, before the event, while the
+ * tournament is still taking registrations. So both are always rendered and the
+ * organizer chooses; nothing here reads the tournament's current status.
+ *
+ * Choosing also drives the on-screen preview, so what you see is what comes out
+ * of the printer.
+ */
+export function QrSignSheets({
+  signUp,
+  playDay,
+  children,
+}: {
+  signUp: React.ReactNode;
+  playDay: React.ReactNode;
+  // Controls that belong in the same row (copy link, downloads).
+  children?: React.ReactNode;
+}) {
+  const [scope, setScope] = useState<SignScope>('both');
+  const showSignUp = scope === 'both' || scope === 'signup';
+  const showPlayDay = scope === 'both' || scope === 'playday';
+
+  return (
+    <>
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6 print:hidden">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm text-gray-500">Print</span>
+          <div role="group" aria-label="Which signs to print" className="inline-flex rounded-lg border border-gray-300 overflow-hidden">
+            {SCOPE_OPTIONS.map(option => (
+              <button
+                key={option.value}
+                type="button"
+                aria-pressed={scope === option.value}
+                onClick={() => setScope(option.value)}
+                className={`text-sm font-medium px-3 py-2 transition-colors ${
+                  scope === option.value
+                    ? 'bg-brand-700 text-white'
+                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {children}
+          <PrintButton className="bg-brand-700 hover:bg-brand-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors" />
+        </div>
+      </div>
+
+      {showSignUp && (
+        <div className={showPlayDay ? 'print:break-after-page' : undefined}>
+          <p className="text-xs font-medium uppercase tracking-wide text-gray-400 mb-2 print:hidden">
+            {showPlayDay ? 'Sheet 1 — ' : ''}Before the event
+          </p>
+          {signUp}
+        </div>
+      )}
+
+      {showPlayDay && (
+        <div className={showSignUp ? 'mt-8' : undefined}>
+          <p className="text-xs font-medium uppercase tracking-wide text-gray-400 mb-2 print:hidden">
+            {showSignUp ? 'Sheet 2 — ' : ''}On tournament day
+          </p>
+          {playDay}
+        </div>
+      )}
+    </>
+  );
+}

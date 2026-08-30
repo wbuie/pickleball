@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import BracketViewer from '@/components/bracket/BracketViewer';
 import CourtBoard from '@/components/tournaments/CourtBoard';
+import NextGameAlert from '@/components/tournaments/NextGameAlert';
 import RegisterButton from '@/components/tournaments/RegisterButton';
 import TournamentRules from '@/components/tournaments/TournamentRules';
 import { StatusBadge, SkillBadge, BasketballBadge, YouthBadge } from '@/components/ui/Badge';
@@ -216,6 +217,17 @@ export default async function TournamentPage({
         tournamentId={id}
         isAdmin={isAdmin}
       />
+
+      {/* "Tell me when I'm up" — for the many players who scan the code at the
+          door and never sign in. Only worth showing once games are running. */}
+      {tournament.status === 'active' && (
+        <NextGameAlert
+          tournamentId={id}
+          matches={(matches || []) as Match[]}
+          entries={entries}
+          defaultEntryId={myEntry?.id}
+        />
+      )}
 
       {/* Where to play: one tile per court, plus who's waiting */}
       <CourtBoard
