@@ -3,7 +3,7 @@ import { basketballTierLabel } from '@/lib/types/app';
 
 interface BadgeProps {
   children: React.ReactNode;
-  variant?: 'green' | 'yellow' | 'blue' | 'gray' | 'red' | 'orange';
+  variant?: 'green' | 'yellow' | 'blue' | 'gray' | 'red' | 'orange' | 'purple';
   size?: 'sm' | 'md';
 }
 
@@ -15,6 +15,7 @@ export function Badge({ children, variant = 'gray', size = 'sm' }: BadgeProps) {
     gray: 'bg-gray-100 text-gray-700 border-gray-200',
     red: 'bg-red-100 text-red-800 border-red-200',
     orange: 'bg-orange-100 text-orange-800 border-orange-200',
+    purple: 'bg-purple-100 text-purple-800 border-purple-200',
   };
   const sizes = {
     sm: 'text-xs px-2 py-0.5',
@@ -53,6 +54,11 @@ export function BasketballBadge({ level, showLabel = false }: { level: number | 
       {showLabel ? basketballTierLabel(level) : level.toFixed(1)}
     </Badge>
   );
+}
+
+// Marks an entry as a youth player, pair, or team for this tournament.
+export function YouthBadge() {
+  return <Badge variant="purple">Youth</Badge>;
 }
 
 export function StatusBadge({ status }: { status: TournamentStatus }) {

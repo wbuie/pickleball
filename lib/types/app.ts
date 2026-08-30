@@ -78,6 +78,10 @@ export interface TournamentRegistration {
   partner_id: string | null;
   team_name: string | null;
   seed: number | null;
+  // Youth entry: an age-group player, pair, or team playing this event. Shows
+  // on the entry lists, and steers seeding so youth entries meet each other in
+  // round 1 wherever the draw allows.
+  is_youth: boolean;
   registered_at: string;
   profiles?: Profile;
   partner?: Profile | null;

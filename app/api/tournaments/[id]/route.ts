@@ -184,3 +184,73 @@ export async function PATCH(
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
+// Delete a tournament outright. This is the only way to take an event back off
+// the board: status only moves forward, and it only reaches "completed" by
+// playing the final, so a duplicate, a test event, or one that was called off
+// would otherwise sit on the list forever.
+//
+// The delete cascades — entries, teams, rosters, the bracket and every score go
+// with it, and none of it can be recovered. To make that hard to do by
+// accident, the caller has to echo the tournament's exact name back.
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+
+    const userSupabase = await createClient();
+    const { data: { user } } = await userSupabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const { data: profile } = await userSupabase
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', user.id)
+      .single();
+    if (!profile?.is_admin) {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+    }
+
+    const supabase = await createAdminClient();
+
+    const { data: tournament } = await supabase
+      .from('tournaments')
+      .select('name')
+      .eq('id', id)
+      .single<{ name: string }>();
+    if (!tournament) return NextResponse.json({ error: 'Tournament not found' }, { status: 404 });
+
+    const body = await request.json().catch(() => ({}));
+    const confirmation = typeof body?.name === 'string' ? body.name.trim() : '';
+    if (confirmation.toLowerCase() !== tournament.name.trim().toLowerCase()) {
+      return NextResponse.json(
+        { error: `Type the tournament name exactly — "${tournament.name}" — to confirm` },
+        { status: 400 }
+      );
+    }
+
+    // Ask for the deleted row back: a delete the database declines to make
+    // (no delete policy for admins — see migration 012) reports no error, it
+    // just matches nothing, and silently telling an organizer their tournament
+    // is gone when it isn't would be worse than any error.
+    const { data: deleted, error } = await supabase
+      .from('tournaments')
+      .delete()
+      .eq('id', id)
+      .select('id');
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (!deleted || deleted.length === 0) {
+      return NextResponse.json(
+        { error: 'The database refused the delete. Run migration 012_tournament_delete.sql in Supabase, then try again.' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ success: true });
+  } catch {
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

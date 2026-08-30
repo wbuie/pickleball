@@ -18,6 +18,7 @@ import {
   MIN_COURTS,
   MAX_COURTS,
 } from '@/lib/types/app';
+import { assignSeeds, youthPairCount } from '@/lib/bracket/youth';
 
 interface MemberOption {
   id: string;
@@ -64,6 +65,9 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
   const [savingCourts, setSavingCourts] = useState(false);
   const [savingScoring, setSavingScoring] = useState(false);
   const [playerToAdd, setPlayerToAdd] = useState('');
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleteDraft, setDeleteDraft] = useState('');
+  const [deleting, setDeleting] = useState(false);
   const [newTeamName, setNewTeamName] = useState('');
   const [addingPlayer, setAddingPlayer] = useState(false);
   const [seeds, setSeeds] = useState<Record<string, number>>({});
@@ -80,6 +84,9 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
   const unpairedCount = isDoubles ? rows.filter(r => !r.partner_id).length : 0;
   const unnamedCount = isRoster ? rows.filter(r => !r.team_name || !r.team_name.trim()).length : 0;
   const incompleteCount = unpairedCount + unnamedCount;
+  const youthCount = rows.filter(r => r.is_youth).length;
+  // How many all-youth first-round games this field can actually produce.
+  const youthGames = youthPairCount(rows);
 
   // Everyone currently in this tournament (captains + partners).
   const enrolled = new Set<string>();
@@ -190,7 +197,7 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
     }
   };
 
-  const post = (path: string, method: string, body: Record<string, string | null>) => () =>
+  const post = (path: string, method: string, body: Record<string, string | boolean | null>) => () =>
     fetch(`/api/tournaments/${id}/${path}`, {
       method,
       headers: { 'Content-Type': 'application/json' },
@@ -272,6 +279,20 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
         }),
       post('registrations', 'DELETE', { registrationId: reg.id, playerId }),
       'Failed to remove player'
+    );
+  };
+
+  // Tag an entry as a youth player/pair/team, or take the tag back off. What it
+  // changes is the draw: seeding puts youth entries opposite each other in round
+  // 1 wherever the numbers allow, so their first game is against another youth
+  // entry rather than the strongest adult in the field.
+  const toggleYouth = (reg: TournamentRegistration) => {
+    const next = !reg.is_youth;
+    return mutateEntry(
+      reg.id,
+      list => list.map(r => (r.id === reg.id ? { ...r, is_youth: next } : r)),
+      post('youth', 'PATCH', { registrationId: reg.id, isYouth: next }),
+      'Failed to update the Youth tag'
     );
   };
 
@@ -423,11 +444,13 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
     }
   };
 
+  // Strongest first, then hand out seed numbers — youth entries get seeds that
+  // face each other in round 1, everyone else fills in around them.
   const handleAutoSeed = () => {
-    const sorted = [...rows].sort((a, b) => entrySkill(b, sport) - entrySkill(a, sport));
+    const ranked = [...rows].sort((a, b) => entrySkill(b, sport) - entrySkill(a, sport));
     const newSeeds: Record<string, number> = {};
-    sorted.forEach((r, i) => {
-      newSeeds[r.id] = i + 1;
+    assignSeeds(ranked).forEach(({ id: regId, seed }) => {
+      newSeeds[regId] = seed;
     });
     setSeeds(newSeeds);
   };
@@ -465,6 +488,28 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
       setError(data.error || 'Failed to pair players');
     }
     setRandomizing(false);
+  };
+
+  // Take the whole event off the board. Everything goes: entries, teams,
+  // rosters, the bracket, every score. Typing the name is the only guard.
+  const handleDelete = async () => {
+    setDeleting(true);
+    setError('');
+    setSuccess('');
+    const res = await fetch(`/api/tournaments/${id}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: deleteDraft.trim() }),
+    });
+    if (res.ok) {
+      // Nothing left to come back to — the panel's own tournament is gone.
+      router.replace('/tournaments');
+      router.refresh();
+      return;
+    }
+    const data = await res.json().catch(() => ({}));
+    setError(data.error || 'Failed to delete tournament');
+    setDeleting(false);
   };
 
   return (
@@ -539,6 +584,27 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
           </div>
         )}
 
+        {youthCount > 0 && (
+          <div className="bg-purple-50 border border-purple-200 text-purple-800 rounded-xl px-4 py-2.5 mb-4 text-sm">
+            {youthCount} youth {youthCount === 1 ? 'entry' : 'entries'}.{' '}
+            {youthGames > 0 ? (
+              <>
+                Seeding will draw {youthGames === 1 ? 'one' : youthGames} first-round{' '}
+                {youthGames === 1 ? 'game' : 'games'} youth-vs-youth
+                {youthCount > youthGames * 2 && ', and seed the odd one out on rating'}.
+              </>
+            ) : (
+              <>
+                There&rsquo;s nothing to pair {youthCount === 1 ? 'it' : 'them'} against yet — it takes two
+                youth entries in the same draw to make a youth-vs-youth game.
+              </>
+            )}{' '}
+            {isBracketGenerated
+              ? 'The bracket is already drawn, so the tag is just a label now.'
+              : 'Applies when you auto-seed or generate the bracket; seeds you set by hand are left alone.'}
+          </div>
+        )}
+
         <div className="space-y-2">
           {entriesBySeed.map(({ reg, seed }) => {
             const unpaired = isDoubles && !reg.partner_id;
@@ -585,6 +651,24 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
                   {sport === 'basketball'
                     ? <BasketballBadge level={entrySkill(reg, sport)} />
                     : <SkillBadge level={entrySkill(reg, sport)} />}
+
+                  <button
+                    onClick={() => toggleYouth(reg)}
+                    disabled={!!busy[reg.id]}
+                    aria-pressed={!!reg.is_youth}
+                    title={
+                      reg.is_youth
+                        ? 'Tagged Youth — drawn against other youth entries in round 1'
+                        : 'Tag as a youth entry'
+                    }
+                    className={`text-xs px-2.5 py-1 rounded-full border transition-colors disabled:opacity-50 ${
+                      reg.is_youth
+                        ? 'bg-purple-100 text-purple-800 border-purple-200 hover:bg-purple-200'
+                        : 'text-gray-400 border-gray-200 hover:bg-gray-50'
+                    }`}
+                  >
+                    Youth
+                  </button>
 
                   {isDoubles && !isBracketGenerated && (
                     unpaired ? (
@@ -920,6 +1004,65 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
             </div>
           )}
         </dl>
+      </div>
+
+      {/* Deleting the event. Nothing else here is destructive, so it sits on its
+          own at the bottom behind a typed confirmation. */}
+      <div className="bg-white rounded-2xl shadow-sm border border-red-200 p-6 mt-6">
+        <h2 className="text-lg font-bold text-red-800 mb-1">Delete this tournament</h2>
+        <p className="text-sm text-gray-500 mb-4">
+          Takes the event off the board for good, along with its{' '}
+          {rows.length} {rows.length === 1 ? entryNoun.toLowerCase().replace(/s$/, '') : entryNoun.toLowerCase()}
+          {isBracketGenerated ? ', the bracket, and every score entered' : ' and their seeding'}. This
+          can&rsquo;t be undone. Only deleting removes a tournament — an event that finished stays on
+          the list as Completed.
+        </p>
+
+        {!confirmingDelete ? (
+          <button
+            onClick={() => {
+              setConfirmingDelete(true);
+              setDeleteDraft('');
+            }}
+            className="text-sm font-medium text-red-700 border border-red-300 px-4 py-2 rounded-lg hover:bg-red-50 transition-colors"
+          >
+            Delete tournament
+          </button>
+        ) : (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+            <label htmlFor="delete-confirm" className="block text-sm text-red-800 mb-2">
+              Type <span className="font-bold">{tournament.name}</span> to confirm.
+            </label>
+            <div className="flex flex-wrap gap-2">
+              <input
+                id="delete-confirm"
+                type="text"
+                autoComplete="off"
+                value={deleteDraft}
+                onChange={e => setDeleteDraft(e.target.value)}
+                placeholder={tournament.name}
+                className="flex-1 min-w-[10rem] border border-red-300 rounded-lg px-3 py-2 text-base sm:text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-500"
+              />
+              <button
+                onClick={handleDelete}
+                disabled={
+                  deleting ||
+                  deleteDraft.trim().toLowerCase() !== tournament.name.trim().toLowerCase()
+                }
+                className="bg-red-700 hover:bg-red-600 text-white text-sm font-bold px-4 py-2 rounded-lg disabled:opacity-50 transition-colors"
+              >
+                {deleting ? 'Deleting…' : 'Delete permanently'}
+              </button>
+              <button
+                onClick={() => setConfirmingDelete(false)}
+                disabled={deleting}
+                className="text-sm text-gray-600 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
