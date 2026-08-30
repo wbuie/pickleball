@@ -72,6 +72,7 @@ npm install
    - `011_open_scoring.sql` — `tournaments.open_scoring`, the per-tournament switch that lets anyone (not just organizers) report match scores
    - `012_tournament_delete.sql` — the RLS policy that lets an admin delete a tournament (without it the Delete button reports that the database refused)
    - `013_youth_entries.sql` — `tournament_registrations.is_youth`, the per-tournament Youth tag that groups youth entries in the draw
+   - `014_admin_password_reset.sql` — one-off maintenance, not schema: sets a known password on a locked-out admin account (edit the address and password first, and change the password after signing in)
 
 ### 3. Configure Environment Variables
 
@@ -91,6 +92,12 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
 1. Register an account through the app
 2. In Supabase **Table Editor → profiles**, set `is_admin = true` for your user
+
+**Locked out of an admin account?** Passwords live in Supabase Auth, not in this
+repo, so there is nothing to change in the code. Either use the app's "Forgot
+password?" link, reset it from the Supabase dashboard (**Authentication → Users
+→ ⋯ → Reset password**), or run `supabase/migrations/014_admin_password_reset.sql`
+in the SQL Editor to set a known one.
 
 ### 5. Run Locally
 
