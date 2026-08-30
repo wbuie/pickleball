@@ -94,7 +94,7 @@ export default function RegisterForm() {
 
   if (confirmEmail) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="flex items-center justify-center px-4 py-10 sm:py-16">
         <div className="w-full max-w-md text-center">
           <span className="text-5xl">📧</span>
           <h1 className="text-2xl font-bold text-brand-900 mt-3">Check your email</h1>
@@ -114,7 +114,7 @@ export default function RegisterForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="flex items-center justify-center px-4 py-10 sm:py-16">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <BrandMark className="w-14 h-14 mx-auto text-brand-500" />
@@ -137,7 +137,7 @@ export default function RegisterForm() {
                 onChange={e => setDisplayName(e.target.value)}
                 placeholder="Jane Smith"
                 required
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
               />
             </div>
 
@@ -153,7 +153,7 @@ export default function RegisterForm() {
                 onChange={e => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 required={requireEmail}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
               />
               {!requireEmail && (
                 <p className="text-xs text-gray-400 mt-1">
@@ -175,7 +175,7 @@ export default function RegisterForm() {
                   placeholder="Min. 6 characters"
                   required
                   minLength={6}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                 />
               </div>
             )}
@@ -222,7 +222,7 @@ export default function RegisterForm() {
                   <button
                     type="button"
                     onClick={() => setKnowsDupr(true)}
-                    className="text-brand-700 text-xs font-medium hover:underline mt-2.5"
+                    className="text-brand-700 text-xs font-medium hover:underline mt-1.5 py-1.5"
                   >
                     I know my DUPR rating — let me enter it instead
                   </button>
@@ -232,7 +232,7 @@ export default function RegisterForm() {
                   <select
                     value={skillLevel}
                     onChange={e => setSkillLevel(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-white"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-white"
                   >
                     {SKILL_LEVELS.map(level => (
                       <option key={level.value} value={level.value}>
@@ -243,7 +243,7 @@ export default function RegisterForm() {
                   <button
                     type="button"
                     onClick={() => setKnowsDupr(false)}
-                    className="text-brand-700 text-xs font-medium hover:underline mt-2.5"
+                    className="text-brand-700 text-xs font-medium hover:underline mt-1.5 py-1.5"
                   >
                     Not sure of your rating? Describe your game instead
                   </button>

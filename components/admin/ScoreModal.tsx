@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Match, BracketEntry } from '@/lib/types/app';
 
 interface ScoreModalProps {
@@ -96,11 +96,42 @@ export default function ScoreModal({
     }
   };
 
+  // Escape closes, and the page behind stays put while the modal is up (on iOS
+  // a scrolling background steals the drag from the panel's own overflow).
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    const { overflow } = document.body.style;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = overflow;
+    };
+  }, [onClose]);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+    <div
+      className="fixed inset-0 z-50 flex items-start sm:items-center justify-center overflow-y-auto overscroll-contain p-4 bg-black/50 backdrop-blur-sm"
+      onMouseDown={e => {
+        // Only a press that both starts and ends on the backdrop dismisses —
+        // a drag that began inside the panel must not close it.
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      {/* The overlay scrolls and the panel is top-aligned on small screens: a
+          phone in landscape (or portrait with the number pad up) is shorter
+          than this panel, and a centred one would put Save off the screen with
+          no way to reach it. */}
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="score-modal-title"
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-sm my-auto"
+      >
         <div className="bg-brand-800 text-white px-6 py-4 rounded-t-2xl">
-          <h2 className="font-bold text-lg">{isEdit ? 'Edit Score' : 'Enter Score'}</h2>
+          <h2 id="score-modal-title" className="font-bold text-lg">{isEdit ? 'Edit Score' : 'Enter Score'}</h2>
           <p className="text-brand-200 text-sm mt-0.5">
             {match.bracket_type === 'winners' && `WB Round ${match.round}`}
             {match.bracket_type === 'losers' && `LB Round ${match.round}`}
@@ -119,6 +150,7 @@ export default function ScoreModal({
             <input
               id="p1-score"
               type="number"
+              inputMode="numeric"
               min="0"
               max="99"
               value={p1Score}
@@ -143,6 +175,7 @@ export default function ScoreModal({
             <input
               id="p2-score"
               type="number"
+              inputMode="numeric"
               min="0"
               max="99"
               value={p2Score}
@@ -163,7 +196,7 @@ export default function ScoreModal({
                 value={court ?? ''}
                 disabled={movingCourt}
                 onChange={e => handleCourtChange(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent disabled:opacity-50"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 sm:py-2 text-base sm:text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent disabled:opacity-50"
               >
                 <option value="">Assign automatically</option>
                 {Array.from({ length: courtCount }, (_, i) => i + 1).map(n => (
@@ -185,14 +218,14 @@ export default function ScoreModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+              className="flex-1 px-4 py-3 sm:py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2 bg-brand-700 text-white rounded-lg font-medium hover:bg-brand-600 disabled:opacity-50 transition-colors"
+              className="flex-1 px-4 py-3 sm:py-2 bg-brand-700 text-white rounded-lg font-medium hover:bg-brand-600 disabled:opacity-50 transition-colors"
             >
               {loading ? 'Saving…' : isEdit ? 'Save Changes' : 'Save Score'}
             </button>

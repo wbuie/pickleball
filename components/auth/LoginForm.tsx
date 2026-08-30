@@ -31,7 +31,7 @@ export default function LoginForm({ initialError = '' }: { initialError?: string
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="flex items-center justify-center px-4 py-10 sm:py-16">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <BrandMark className="w-14 h-14 mx-auto text-brand-500" />
@@ -51,7 +51,7 @@ export default function LoginForm({ initialError = '' }: { initialError?: string
                 onChange={e => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 required
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
               />
             </div>
 
@@ -70,7 +70,7 @@ export default function LoginForm({ initialError = '' }: { initialError?: string
                 onChange={e => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
               />
             </div>
 

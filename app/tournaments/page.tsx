@@ -40,7 +40,7 @@ export default async function TournamentsPage({
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Tournaments</h1>
           <p className="text-gray-500 mt-1">Find and join a tournament near you</p>

@@ -50,7 +50,7 @@ function Matchup({
       {sides.map((entryId, i) => (
         <p
           key={i}
-          className={`text-sm truncate ${
+          className={`text-sm break-words ${
             entryId && entryId === highlightEntryId ? 'font-bold text-brand-800' : 'font-medium text-gray-800'
           }`}
         >
@@ -198,13 +198,13 @@ export default function CourtBoard({
                 </>
               );
               return (
-                <li key={match.id} className="text-sm text-gray-600 truncate">
+                <li key={match.id} className="text-sm text-gray-600">
                   {canScoreMatch(access, match) ? (
                     <button
                       type="button"
                       onClick={() => setScoringMatchId(match.id)}
                       aria-label={scoreLabel(match)}
-                      className="block w-full text-left truncate rounded px-1 -mx-1 cursor-pointer hover:bg-brand-50 hover:text-brand-800 transition-colors"
+                      className="block w-full text-left rounded px-1 -mx-1 py-1.5 cursor-pointer hover:bg-brand-50 hover:text-brand-800 transition-colors"
                     >
                       {line}
                     </button>

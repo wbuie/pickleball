@@ -63,9 +63,11 @@ function PlayerLine({
         isWinner ? 'bg-brand-50 border-l-4 border-l-brand-500' : isLoser ? 'opacity-55' : 'border-l-4 border-l-transparent'
       }`}
     >
-      <span className={`text-sm truncate ${isWinner ? 'font-bold text-brand-800' : 'font-medium text-gray-800'}`}>
-        {player ? player.display_name : <span className="text-gray-400 italic">{label}</span>}
-        {isYou && <span className="ml-1.5 text-brand-600 text-xs font-semibold">(you)</span>}
+      <span className="flex min-w-0 items-baseline gap-1.5">
+        <span className={`text-sm truncate ${isWinner ? 'font-bold text-brand-800' : 'font-medium text-gray-800'}`}>
+          {player ? player.display_name : <span className="text-gray-400 italic">{label}</span>}
+        </span>
+        {isYou && <span className="flex-shrink-0 text-brand-600 text-xs font-semibold">(you)</span>}
       </span>
       {isCompleted && (
         <span className={`text-base font-bold tabular-nums flex-shrink-0 ${isWinner ? 'text-brand-700' : 'text-gray-400'}`}>
@@ -279,14 +281,14 @@ export default function MatchList({
           onChange={e => setQuery(e.target.value)}
           placeholder="Find your name or court…"
           aria-label="Filter matches by player name or court"
-          className="w-full rounded-xl border border-gray-300 bg-white pl-9 pr-9 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+          className="w-full rounded-xl border border-gray-300 bg-white pl-9 pr-12 py-2.5 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
         />
         {query && (
           <button
             type="button"
             onClick={() => setQuery('')}
             aria-label="Clear filter"
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 rounded-full"
+            className="absolute right-1 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center text-gray-400 hover:text-gray-600 rounded-full"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

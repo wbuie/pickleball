@@ -38,9 +38,12 @@ export default function Navigation({ user }: NavigationProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 font-bold text-xl tracking-tight">
-            <BrandMark className="w-7 h-7 text-accent-400" />
-            <span>CFC Sports Tournaments</span>
+          <Link
+            href="/"
+            className="flex items-center gap-2 min-w-0 mr-2 py-3 font-bold text-lg sm:text-xl tracking-tight"
+          >
+            <BrandMark className="w-7 h-7 flex-shrink-0 text-accent-400" />
+            <span className="truncate">CFC Sports Tournaments</span>
           </Link>
 
           {/* Desktop nav */}
@@ -92,12 +95,12 @@ export default function Navigation({ user }: NavigationProps) {
 
           {/* Mobile menu button */}
           <button
-            className="md:hidden p-2 rounded-lg text-brand-100 hover:bg-brand-700"
+            className="md:hidden flex-shrink-0 flex items-center justify-center w-11 h-11 -mr-2 rounded-lg text-brand-100 hover:bg-brand-700"
             onClick={() => setMenuOpen(!menuOpen)}
             aria-label={menuOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={menuOpen}
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               {menuOpen ? (
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               ) : (
@@ -115,7 +118,7 @@ export default function Navigation({ user }: NavigationProps) {
             <Link
               key={link.href}
               href={link.href}
-              className="block text-brand-100 hover:text-accent-400 py-1"
+              className="block text-brand-100 hover:text-accent-400 py-2.5"
               onClick={() => setMenuOpen(false)}
             >
               {link.label}
@@ -124,14 +127,17 @@ export default function Navigation({ user }: NavigationProps) {
           {user ? (
             <>
               <p className="text-brand-400 text-sm pt-2 border-t border-brand-700">{user.display_name}</p>
-              <button onClick={handleSignOut} className="text-brand-100 hover:text-accent-400 text-sm">
+              <button
+                onClick={handleSignOut}
+                className="block w-full text-left text-brand-100 hover:text-accent-400 text-sm py-2.5"
+              >
                 Sign Out
               </button>
             </>
           ) : (
             <div className="pt-2 border-t border-brand-700 space-y-1">
-              <Link href="/auth/login" className="block text-brand-100" onClick={() => setMenuOpen(false)}>Sign In</Link>
-              <Link href="/auth/register" className="block text-accent-400 font-medium" onClick={() => setMenuOpen(false)}>Register</Link>
+              <Link href="/auth/login" className="block text-brand-100 py-2.5" onClick={() => setMenuOpen(false)}>Sign In</Link>
+              <Link href="/auth/register" className="block text-accent-400 font-medium py-2.5" onClick={() => setMenuOpen(false)}>Register</Link>
             </div>
           )}
         </div>
