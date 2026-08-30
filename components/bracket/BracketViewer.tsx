@@ -50,6 +50,14 @@ export default function BracketViewer({ tournamentId, matches, players, format, 
   // Default to the mobile-friendly list on small screens (where the wide
   // bracket diagram is hardest to read) and the diagram on larger screens,
   // until the viewer explicitly picks a view.
+  //
+  // With no explicit pick, that default is expressed in CSS rather than in JS:
+  // the server can't know the screen width, so choosing in JS meant phones were
+  // served the wide diagram and only swapped to the list after hydration — a
+  // visible flash and a layout shift on exactly the devices the list is for.
+  // Rendering both and letting the breakpoint decide gets it right on the first
+  // paint. The media query below survives only to label the toggle, which moves
+  // nothing on screen.
   const isMobile = useMediaQuery(MOBILE_QUERY);
   const [override, setOverride] = useState<View | null>(null);
   const view: View = override ?? (isMobile ? 'list' : 'bracket');
@@ -116,7 +124,7 @@ export default function BracketViewer({ tournamentId, matches, players, format, 
               type="button"
               onClick={() => setView(v)}
               aria-pressed={view === v}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
+              className={`px-3.5 py-2 text-xs font-semibold rounded-md transition-colors ${
                 view === v ? 'bg-white text-brand-800 shadow-sm' : 'text-brand-600 hover:text-brand-800'
               }`}
             >
@@ -126,29 +134,37 @@ export default function BracketViewer({ tournamentId, matches, players, format, 
         </div>
       </div>
 
-      {view === 'list' ? (
-        <MatchList
-          grid={grid}
-          playerMap={playerMap}
-          format={format}
-          access={access}
-          onScoreClick={setScoringMatchId}
-          highlightEntryId={highlightEntryId}
-        />
-      ) : format === 'single_elimination' ? (
-        <SingleEliminationBracket
-          grid={grid}
-          playerMap={playerMap}
-          access={access}
-          onScoreClick={setScoringMatchId}
-        />
-      ) : (
-        <DoubleEliminationBracket
-          grid={grid}
-          playerMap={playerMap}
-          access={access}
-          onScoreClick={setScoringMatchId}
-        />
+      {override !== 'bracket' && (
+        <div className={override === null ? 'md:hidden' : undefined}>
+          <MatchList
+            grid={grid}
+            playerMap={playerMap}
+            format={format}
+            access={access}
+            onScoreClick={setScoringMatchId}
+            highlightEntryId={highlightEntryId}
+          />
+        </div>
+      )}
+
+      {override !== 'list' && (
+        <div className={override === null ? 'hidden md:block' : undefined}>
+          {format === 'single_elimination' ? (
+            <SingleEliminationBracket
+              grid={grid}
+              playerMap={playerMap}
+              access={access}
+              onScoreClick={setScoringMatchId}
+            />
+          ) : (
+            <DoubleEliminationBracket
+              grid={grid}
+              playerMap={playerMap}
+              access={access}
+              onScoreClick={setScoringMatchId}
+            />
+          )}
+        </div>
       )}
 
       {scoringMatch && canScoreMatch(access, scoringMatch) && (
