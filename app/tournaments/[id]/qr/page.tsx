@@ -110,13 +110,17 @@ export default async function TournamentQrPage({
           />
         </div>
 
-        <p className="mt-6 text-2xl font-bold text-brand-800">
-          {isOpen ? 'Scan to sign up' : 'Scan to follow the bracket'}
+        {/* The sign gets taped up once and stays up all day, so both lines have
+            to still make sense after registration closes and play starts. */}
+        <p className="mt-6 text-2xl font-bold text-brand-800 text-balance">
+          {isOpen
+            ? 'Scan to sign up and follow along'
+            : 'Scan to check your playing status and see the results'}
         </p>
         <p className="mt-1 text-gray-500">
           {isOpen
-            ? 'Register, pick a partner, and see who else is playing.'
-            : 'Live scores, your next match, and the court you play on.'}
+            ? 'Register and pick a partner now — then check when you play, which court, and every score as it lands.'
+            : 'When you play, which court you’re on, and every score as it lands.'}
         </p>
 
         <p className="mt-5 font-mono text-sm text-gray-500 break-all">{displayUrl(url)}</p>
