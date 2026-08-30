@@ -3,6 +3,7 @@ import { createAdminClient, createClient } from '@/lib/supabase/server';
 import { generateSingleEliminationBracket } from '@/lib/bracket/singleElimination';
 import { generateDoubleEliminationBracket } from '@/lib/bracket/doubleElimination';
 import { syncCourtAssignments } from '@/lib/bracket/courts';
+import { assignSeeds } from '@/lib/bracket/youth';
 import { isRosterEvent } from '@/lib/types/app';
 
 export async function POST(
@@ -56,7 +57,7 @@ export async function POST(
     // otherwise) with each roster member's ratings for seeding.
     const { data: registrations } = await supabase
       .from('tournament_registrations')
-      .select('id, player_id, partner_id, team_name, seed, profiles:player_id(skill_level, basketball_skill_level), partner:partner_id(skill_level, basketball_skill_level), members:registration_members(profiles:player_id(skill_level, basketball_skill_level))')
+      .select('id, player_id, partner_id, team_name, seed, is_youth, profiles:player_id(skill_level, basketball_skill_level), partner:partner_id(skill_level, basketball_skill_level), members:registration_members(profiles:player_id(skill_level, basketball_skill_level))')
       .eq('tournament_id', id)
       .order('seed', { ascending: true, nullsFirst: false });
 
@@ -107,28 +108,22 @@ export async function POST(
       return ratings.reduce((sum, v) => sum + v, 0) / ratings.length;
     };
 
-    // Assign seeds if not already set (by skill, descending).
+    // Assign seeds if not already set (by skill, descending), keeping any youth
+    // entries on both sides of the same first-round games. An organizer who has
+    // seeded the field by hand keeps exactly the draw they set.
     const unseeded = registrations.filter(r => r.seed === null);
     let players: { id: string; seed: number }[];
 
     if (unseeded.length > 0) {
-      const sorted = [...registrations].sort((a, b) => skillOf(b) - skillOf(a));
+      const ranked = [...registrations].sort((a, b) => skillOf(b) - skillOf(a));
+      players = assignSeeds(ranked);
 
-      for (let i = 0; i < sorted.length; i++) {
+      for (const { id: registrationId, seed } of players) {
         await supabase
           .from('tournament_registrations')
-          .update({ seed: i + 1 })
-          .eq('id', sorted[i].id);
+          .update({ seed })
+          .eq('id', registrationId);
       }
-
-      // Re-fetch with updated seeds
-      const { data: reseeded } = await supabase
-        .from('tournament_registrations')
-        .select('id, seed')
-        .eq('tournament_id', id)
-        .order('seed', { ascending: true });
-
-      players = (reseeded || []).map(r => ({ id: r.id, seed: r.seed! }));
     } else {
       players = registrations.map(r => ({ id: r.id, seed: r.seed! }));
     }

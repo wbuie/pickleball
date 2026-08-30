@@ -6,7 +6,7 @@ import BracketViewer from '@/components/bracket/BracketViewer';
 import CourtBoard from '@/components/tournaments/CourtBoard';
 import RegisterButton from '@/components/tournaments/RegisterButton';
 import TournamentRules from '@/components/tournaments/TournamentRules';
-import { StatusBadge, SkillBadge, BasketballBadge } from '@/components/ui/Badge';
+import { StatusBadge, SkillBadge, BasketballBadge, YouthBadge } from '@/components/ui/Badge';
 import { FORMAT_LABELS, STATUS_LABELS, EVENT_LABELS, SPORT_LABELS, entryName, entrySkill, entryPlayers, entryNoun as entryNounFor, isRosterEvent, isTeamEvent } from '@/lib/types/app';
 import type { Match, Profile, BracketEntry, TournamentRegistration, EventType, Sport } from '@/lib/types/app';
 import { scoreAccessFor } from '@/lib/scoreAccess';
@@ -271,6 +271,7 @@ export default async function TournamentPage({
                       {youAreHere && <span className="ml-1 text-brand-600 text-xs">(you)</span>}
                       {unpaired && <span className="ml-1 text-amber-600 text-xs">· needs partner</span>}
                     </span>
+                    {reg.is_youth && <YouthBadge />}
                     {sport === 'basketball'
                       ? <BasketballBadge level={entrySkill(reg, sport)} />
                       : <SkillBadge level={entrySkill(reg, sport)} />}

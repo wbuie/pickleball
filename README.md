@@ -16,6 +16,8 @@ A tournament hosting web app for **Christ Fellowship Church, Birmingham**. Built
 - **Per-sport ratings** — Players carry a pickleball DUPR rating (2.0–5.0) and a separate basketball tier (1–5). Brackets seed by the rating for that tournament's sport
 - **Admins by email** — Organizers grant admin access by email from the League Admin page; a matching account is promoted immediately, and unregistered emails are auto-granted admin when they sign up
 - **Auto-Seeding** — Seeded automatically by skill level; admins can override
+- **Youth entries** — An organizer tags any entry — a player, a doubles pair, a basketball team — as **Youth** from the Admin Panel. Seeding then hands youth entries the seeds that meet each other in round 1 wherever the numbers allow (the middle of the draw: 8v9, then 7v10, …), so a youth team's first game is against another youth team rather than the strongest adult in the field. With an odd number, the leftover entry seeds on rating as usual; seeds an organizer sets by hand are never rewritten. The tag is per tournament, so the same player can enter the open event next week
+- **Deleting a tournament** — Admins can delete an event from the bottom of the Admin Panel, behind a type-the-name confirmation. It takes the entries, bracket, and scores with it and can't be undone — it's the way to clear a duplicate, a test event, or one that was called off. A tournament that actually finished stays on the list as **Completed**, which happens on its own when the final is scored
 - **Courts** — An organizer says how many courts the event runs on, and every match that's ready to play is handed a court number. Courts recycle themselves: entering a score frees that court for the next match in line, and players see an "On the courts" board (plus a "You're up on Court 3" callout) on the tournament page. Court count can change mid-event, and an admin can move any match to a specific court
 - **Rules & regulations** — Every tournament has a rules section on its page: scoring, serving, line calls, conduct — whatever the organizer posts. It's plain text (short lines become headings, `-`/numbered lines become lists), and the create/edit form can start an organizer off with the standard rules for that sport. Leave it empty and the section stays hidden from players
 - **Printable QR sign** — Every tournament gets a QR code pointing at its page. Organizers find it on the tournament's edit screen and can print a full-sheet sign (name, date, location, big code) to tape up at the check-in table, or download the bare code as PNG/SVG for a flyer or slide. The same code carries the event from sign-ups through live scores
@@ -67,6 +69,8 @@ npm install
    - `009_courts.sql` — courts: `tournaments.court_count` and `matches.court`, so matches get a court number players can look up
    - `010_tournament_rules.sql` — `tournaments.rules`, the free-text rules & regulations shown on the tournament page
    - `011_open_scoring.sql` — `tournaments.open_scoring`, the per-tournament switch that lets anyone (not just organizers) report match scores
+   - `012_tournament_delete.sql` — the RLS policy that lets an admin delete a tournament (without it the Delete button reports that the database refused)
+   - `013_youth_entries.sql` — `tournament_registrations.is_youth`, the per-tournament Youth tag that groups youth entries in the draw
 
 ### 3. Configure Environment Variables
 
@@ -119,10 +123,11 @@ npm test
 1. **Admin** creates a tournament (single or double elimination, max players, courts, date)
 2. **Players** register via the tournament page
 3. **Admin** opens the Admin Panel → optionally adjusts seeding → clicks **Generate Bracket**
-4. Seeds 1–N are assigned by DUPR rating (highest = seed 1); byes go to top seeds
+4. Seeds 1–N are assigned by DUPR rating (highest = seed 1); byes go to top seeds. Entries tagged **Youth** are placed opposite each other so their first game is youth-vs-youth
 5. Every match that's ready to play is given a court (1…court count); the rest wait in line
 6. **Admin** clicks any ready match → enters scores → winner advances automatically, and the court passes to the next match. With **open score reporting** on for the tournament, players do this themselves from their court tile — signed in or not
 7. Double elimination: losers drop to the Losers Bracket; Grand Finals can have a Reset match
+8. Scoring the final flips the tournament to **Completed** on its own; there is no separate "close" step. Deleting is the only way to remove an event entirely
 
 ---
 
