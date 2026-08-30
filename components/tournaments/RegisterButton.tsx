@@ -104,7 +104,7 @@ export default function RegisterButton({
           placeholder="Team name"
           value={teamName}
           onChange={e => setTeamName(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+          className="border border-gray-300 rounded-lg px-3 py-2 text-base sm:text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
         />
         <div>
           <p className="text-xs text-gray-500 mb-1">
@@ -169,7 +169,7 @@ export default function RegisterButton({
           aria-label="Choose your partner"
           value={partnerId}
           onChange={e => setPartnerId(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 min-w-[12rem]"
+          className="border border-gray-300 rounded-lg px-3 py-2 text-base sm:text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 min-w-[12rem]"
         >
           <option value="">Choose your partner…</option>
           {eligiblePartners.map(p => (

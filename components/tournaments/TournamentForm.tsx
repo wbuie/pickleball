@@ -164,7 +164,7 @@ export default function TournamentForm({
               placeholder="Spring Open 2025"
               required
               defaultValue={initial?.name ?? ''}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
             />
           </div>
 
@@ -176,7 +176,7 @@ export default function TournamentForm({
               placeholder="A short blurb about the tournament — what it's for, prizes, who to contact."
               rows={3}
               defaultValue={initial?.description ?? ''}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent resize-none"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent resize-none"
             />
           </div>
 
@@ -188,7 +188,7 @@ export default function TournamentForm({
             </p>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label htmlFor="t-sport" className="block text-sm font-medium text-gray-700 mb-1">
                 Sport <span className="text-red-500">*</span>
@@ -200,7 +200,7 @@ export default function TournamentForm({
                 disabled={structuralLocked}
                 value={sport}
                 onChange={e => handleSportChange(e.target.value as Sport)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-white disabled:bg-gray-50 disabled:text-gray-400"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-white disabled:bg-gray-50 disabled:text-gray-400"
               >
                 {(Object.keys(SPORT_LABELS) as Sport[]).map(s => (
                   <option key={s} value={s}>{SPORT_LABELS[s]}</option>
@@ -219,7 +219,7 @@ export default function TournamentForm({
                 disabled={structuralLocked}
                 value={eventType}
                 onChange={e => setEventType(e.target.value as EventType)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-white disabled:bg-gray-50 disabled:text-gray-400"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-white disabled:bg-gray-50 disabled:text-gray-400"
               >
                 {eventOptions.map(ev => (
                   <option key={ev} value={ev}>{EVENT_LABELS[ev]} ({EVENT_HINTS[ev]})</option>
@@ -228,7 +228,7 @@ export default function TournamentForm({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label htmlFor="t-format" className="block text-sm font-medium text-gray-700 mb-1">
                 Format <span className="text-red-500">*</span>
@@ -239,7 +239,7 @@ export default function TournamentForm({
                 required
                 disabled={structuralLocked}
                 defaultValue={initial?.format ?? 'single_elimination'}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-white disabled:bg-gray-50 disabled:text-gray-400"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-white disabled:bg-gray-50 disabled:text-gray-400"
               >
                 <option value="single_elimination">Single Elimination</option>
                 <option value="double_elimination">Double Elimination</option>
@@ -256,7 +256,7 @@ export default function TournamentForm({
                 required
                 disabled={structuralLocked}
                 defaultValue={String(initial?.max_players ?? 16)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-white disabled:bg-gray-50 disabled:text-gray-400"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-white disabled:bg-gray-50 disabled:text-gray-400"
               >
                 {maxOptions.map(n => (
                   <option key={n} value={n} disabled={n < minMaxPlayers}>
@@ -281,7 +281,7 @@ export default function TournamentForm({
               step={1}
               required
               defaultValue={initial?.court_count ?? 1}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
             />
             <p className="text-xs text-gray-400 mt-1">
               How many courts you&rsquo;ll play on. Matches are handed a court number as they come up,
@@ -296,7 +296,7 @@ export default function TournamentForm({
                 name="open_scoring"
                 type="checkbox"
                 defaultChecked={initial?.open_scoring ?? false}
-                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand-700 focus:ring-brand-500"
+                className="mt-0.5 h-5 w-5 flex-shrink-0 rounded border-gray-300 text-brand-700 focus:ring-brand-500"
               />
               <span className="text-sm">
                 <span className="font-medium text-gray-700">Let anyone report scores</span>
@@ -310,7 +310,7 @@ export default function TournamentForm({
             </label>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label htmlFor="t-start-date" className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
               <input
@@ -318,7 +318,7 @@ export default function TournamentForm({
                 name="start_date"
                 type="date"
                 defaultValue={initial?.start_date ?? ''}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
               />
             </div>
 
@@ -330,7 +330,7 @@ export default function TournamentForm({
                 type="text"
                 placeholder="City Park Courts"
                 defaultValue={initial?.location ?? ''}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
               />
             </div>
           </div>
@@ -345,7 +345,7 @@ export default function TournamentForm({
                   <button
                     type="button"
                     onClick={() => setRules(RULES_TEMPLATES[sport])}
-                    className="text-xs font-medium text-brand-700 hover:underline"
+                    className="text-xs font-medium text-brand-700 hover:underline py-1.5"
                   >
                     {rules.trim() ? 'Replace with standard rules' : `Start from standard ${SPORT_LABELS[sport].toLowerCase()} rules`}
                   </button>
@@ -354,7 +354,7 @@ export default function TournamentForm({
                   <button
                     type="button"
                     onClick={() => setRules('')}
-                    className="text-xs font-medium text-gray-500 hover:underline"
+                    className="text-xs font-medium text-gray-500 hover:underline py-1.5"
                   >
                     Clear
                   </button>
@@ -368,7 +368,7 @@ export default function TournamentForm({
               value={rules}
               onChange={e => setRules(e.target.value)}
               placeholder={`Scoring\n- Each match is a single game to 11 points, win by 2.\n\nConduct\n- Play hard and keep it friendly.`}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-base sm:text-sm font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
             />
             <p className="text-xs text-gray-400 mt-1">
               Shown on the tournament page so players can read how the event plays. Plain text: a short

@@ -74,7 +74,7 @@ export default function ResetPasswordForm() {
 
   if (ready === false) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="flex items-center justify-center px-4 py-10 sm:py-16">
         <div className="w-full max-w-md text-center">
           <span className="text-5xl">⏳</span>
           <h1 className="text-2xl font-bold text-brand-900 mt-3">Link expired</h1>
@@ -94,7 +94,7 @@ export default function ResetPasswordForm() {
 
   if (done) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="flex items-center justify-center px-4 py-10 sm:py-16">
         <div className="w-full max-w-md text-center">
           <span className="text-5xl">✅</span>
           <h1 className="text-2xl font-bold text-brand-900 mt-3">Password updated</h1>
@@ -111,7 +111,7 @@ export default function ResetPasswordForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="flex items-center justify-center px-4 py-10 sm:py-16">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <BrandMark className="w-14 h-14 mx-auto text-brand-500" />
@@ -131,7 +131,7 @@ export default function ResetPasswordForm() {
                 onChange={e => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
               />
             </div>
 
@@ -145,7 +145,7 @@ export default function ResetPasswordForm() {
                 onChange={e => setConfirm(e.target.value)}
                 placeholder="••••••••"
                 required
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
               />
             </div>
 

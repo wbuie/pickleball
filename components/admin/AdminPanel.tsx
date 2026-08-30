@@ -469,7 +469,7 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2 mb-6">
         <div>
           <Link href={`/tournaments/${id}`} className="text-brand-600 text-sm hover:underline mb-1 block">
             ← Back to tournament
@@ -477,7 +477,7 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
           <h1 className="text-2xl font-bold text-gray-900">Admin Panel</h1>
           <p className="text-gray-500 text-sm mt-0.5">{tournament.name}</p>
         </div>
-        <div className="text-right text-sm">
+        <div className="text-left sm:text-right text-sm">
           <p className="text-gray-400">{SPORT_LABELS[tournament.sport]} · {EVENT_LABELS[tournament.event_type]} · {FORMAT_LABELS[tournament.format]}</p>
           <p className="font-medium text-gray-700">{STATUS_LABELS[tournament.status]}</p>
           <Link
@@ -558,7 +558,7 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
                         onChange={e =>
                           setSeeds(prev => ({ ...prev, [reg.id]: parseInt(e.target.value) || 0 }))
                         }
-                        className="w-14 border border-gray-200 rounded-lg px-2 py-1 text-sm text-center focus:outline-none focus:ring-2 focus:ring-brand-500"
+                        className="w-14 border border-gray-200 rounded-lg px-2 py-1 text-base sm:text-sm text-center focus:outline-none focus:ring-2 focus:ring-brand-500"
                       />
                     ) : (
                       <span className="w-14 text-center text-gray-400 text-sm inline-block">#{reg.seed}</span>
@@ -573,7 +573,7 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
                       value={nameDrafts[reg.id] ?? reg.team_name ?? ''}
                       onChange={e => setNameDrafts(prev => ({ ...prev, [reg.id]: e.target.value }))}
                       onBlur={e => renameTeam(reg.id, e.target.value)}
-                      className={`flex-1 min-w-[8rem] border rounded-lg px-2 py-1 text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500 ${unnamed ? 'border-amber-300 bg-amber-50' : 'border-gray-200'}`}
+                      className={`flex-1 min-w-[8rem] border rounded-lg px-2 py-1 text-base sm:text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500 ${unnamed ? 'border-amber-300 bg-amber-50' : 'border-gray-200'}`}
                     />
                   ) : (
                     <span className="flex-1 min-w-[8rem] font-medium text-gray-800">
@@ -593,7 +593,7 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
                           aria-label={`Partner for ${entryName(reg)}`}
                           value={pendingPartner[reg.id] ?? ''}
                           onChange={e => setPendingPartner(prev => ({ ...prev, [reg.id]: e.target.value }))}
-                          className="flex-1 sm:flex-none border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                          className="flex-1 sm:flex-none border border-gray-300 rounded-lg px-2 py-1.5 text-base sm:text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
                         >
                           <option value="">Pair with… (closest rating first)</option>
                           {candidatesFor(reg).map(m => (
@@ -700,7 +700,7 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
                           aria-label={`Add a player to ${entryName(reg)}`}
                           value={pendingMember[reg.id] ?? ''}
                           onChange={e => setPendingMember(prev => ({ ...prev, [reg.id]: e.target.value }))}
-                          className="flex-1 sm:flex-none border border-gray-300 rounded-lg px-2 py-1 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                          className="flex-1 sm:flex-none border border-gray-300 rounded-lg px-2 py-1 text-base sm:text-xs bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
                         >
                           <option value="">Add player…</option>
                           {availableProfiles.map(m => (
@@ -738,14 +738,14 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
                   placeholder="Team name"
                   value={newTeamName}
                   onChange={e => setNewTeamName(e.target.value)}
-                  className="flex-1 min-w-[9rem] border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="flex-1 min-w-[9rem] border border-gray-300 rounded-lg px-3 py-2 text-base sm:text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               )}
               <select
                 id="add-player"
                 value={playerToAdd}
                 onChange={e => setPlayerToAdd(e.target.value)}
-                className="flex-1 min-w-[9rem] border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="flex-1 min-w-[9rem] border border-gray-300 rounded-lg px-3 py-2 text-base sm:text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
               >
                 <option value="">
                   {availableProfiles.length
@@ -827,7 +827,7 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
             step={1}
             value={courtDraft}
             onChange={e => setCourtDraft(e.target.value)}
-            className="w-20 border border-gray-300 rounded-lg px-3 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="w-20 border border-gray-300 rounded-lg px-3 py-2 text-base sm:text-sm text-center focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
           <button
             onClick={handleSaveCourts}
@@ -854,7 +854,7 @@ export default function AdminPanel({ tournament, registrations, members }: Admin
             checked={tournament.open_scoring ?? false}
             disabled={savingScoring}
             onChange={e => handleToggleOpenScoring(e.target.checked)}
-            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand-700 focus:ring-brand-500 disabled:opacity-50"
+            className="mt-0.5 h-5 w-5 flex-shrink-0 rounded border-gray-300 text-brand-700 focus:ring-brand-500 disabled:opacity-50"
           />
           <span className="text-sm">
             <span className="font-medium text-gray-800">

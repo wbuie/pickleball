@@ -374,7 +374,7 @@ export default function AdminDashboard({
               value={adminEmailInput}
               onChange={e => setAdminEmailInput(e.target.value)}
               placeholder="coach@example.com"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
           <button
@@ -445,7 +445,7 @@ export default function AdminDashboard({
                 setImportTournament(e.target.value);
                 setPendingImport(null);
               }}
-              className="w-full sm:w-auto border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full sm:w-auto border border-gray-300 rounded-lg px-3 py-2 text-base sm:text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               <option value="">Roster only — don&apos;t register anyone</option>
               {openTournaments.map(t => (
@@ -468,7 +468,7 @@ export default function AdminDashboard({
                 setPairingMode(e.target.value as PairingMode);
                 setPendingImport(null);
               }}
-              className="w-full sm:w-auto border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full sm:w-auto border border-gray-300 rounded-lg px-3 py-2 text-base sm:text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               {PAIRING_MODE_OPTIONS.map(o => (
                 <option key={o.value} value={o.value}>{o.label}</option>
@@ -590,7 +590,7 @@ export default function AdminDashboard({
               value={name}
               onChange={e => setName(e.target.value)}
               placeholder="Jane Smith"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
           <div>
@@ -598,7 +598,7 @@ export default function AdminDashboard({
             <select
               value={skill}
               onChange={e => setSkill(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="border border-gray-300 rounded-lg px-3 py-2 text-base sm:text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               {SKILL_LEVELS.map(l => (
                 <option key={l.value} value={l.value}>{l.label}</option>
@@ -610,7 +610,7 @@ export default function AdminDashboard({
             <select
               value={bball}
               onChange={e => setBball(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="border border-gray-300 rounded-lg px-3 py-2 text-base sm:text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               <option value="">Unrated</option>
               {BASKETBALL_SKILL_LEVELS.map(l => (
@@ -667,7 +667,7 @@ export default function AdminDashboard({
                       aria-label={`Pickleball rating for ${p.display_name}`}
                       value={ratingDraft}
                       onChange={e => setRatingDraft(e.target.value)}
-                      className="border border-gray-300 rounded-lg px-2 py-1 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      className="border border-gray-300 rounded-lg px-2 py-1 text-base sm:text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
                     >
                       {SKILL_LEVELS.map(l => (
                         <option key={l.value} value={l.value}>{l.label}</option>
@@ -708,7 +708,7 @@ export default function AdminDashboard({
                       aria-label={`Basketball rating for ${p.display_name}`}
                       value={ratingDraft}
                       onChange={e => setRatingDraft(e.target.value)}
-                      className="border border-gray-300 rounded-lg px-2 py-1 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      className="border border-gray-300 rounded-lg px-2 py-1 text-base sm:text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
                     >
                       <option value="">Unrated</option>
                       {BASKETBALL_SKILL_LEVELS.map(l => (

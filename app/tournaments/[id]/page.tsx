@@ -139,7 +139,7 @@ export default async function TournamentPage({
       <div className="bg-white rounded-2xl shadow-sm border border-brand-100 p-6 mb-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-2">
               <StatusBadge status={tournament.status} />
               <span className="text-gray-400 text-sm">·</span>
               <span className="text-gray-500 text-sm">{SPORT_LABELS[tournament.sport as keyof typeof SPORT_LABELS]}</span>
@@ -172,7 +172,7 @@ export default async function TournamentPage({
             </div>
           </div>
 
-          <div className="flex flex-col gap-2 items-end">
+          <div className="flex flex-col gap-2 w-full sm:w-auto items-stretch sm:items-end">
             {champion && (
               <div className="bg-accent-50 border border-accent-200 rounded-xl px-4 py-2 text-center">
                 <p className="text-accent-700 text-xs font-medium uppercase tracking-wide">Champion</p>
