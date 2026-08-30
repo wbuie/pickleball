@@ -89,7 +89,11 @@ export default function SingleEliminationBracket({
 
               {/* Connector between rounds */}
               {!isLastRound && (
-                <div className="flex flex-col" style={{ width: 24, marginTop: 40 }}>
+                // The connectors below are positioned absolutely against this
+                // column, so it has to establish the containing block — without
+                // `relative` they escape to the page and draw full-width rules
+                // across everything above the bracket.
+                <div className="relative flex flex-col" style={{ width: 24, marginTop: 40 }}>
                   {Array.from({ length: matchesInRound / 2 }, (_, pairIdx) => {
                     const pairSlotHeight = slotHeight * 2;
                     const topMatch = pairIdx * pairSlotHeight + slotHeight / 2 - BASE_HEIGHT / 2 + 2;

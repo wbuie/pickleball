@@ -215,9 +215,10 @@ export default async function TournamentPage({
       {/* Where to play: one tile per court, plus who's waiting */}
       <CourtBoard
         matches={(matches || []) as Match[]}
-        entries={new Map(entries.map(e => [e.id, e]))}
+        entries={entries}
         courtCount={courtCount}
         highlightEntryId={myEntry?.id}
+        isAdmin={profile?.is_admin ?? false}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
